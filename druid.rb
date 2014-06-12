@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-# Name:         druid (Dell Ruby Update Information and Download)
-# Version:      0.0.2
+# Name:         druid (Dell Retrieve Update Information and Download)
+# Version:      0.0.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode

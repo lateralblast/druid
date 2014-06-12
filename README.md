@@ -1,7 +1,9 @@
+![alt tag](https://raw.githubusercontent.com/lateralblast/druid/master/druid.jpg)
+
 DRUID
 =====
 
-Dell Ruby Update Information and Download
+Dell Retrieve Update Information and Download
 
 A ruby script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
@@ -24,13 +26,16 @@ http://creativecommons.org/licenses/by/4.0/legalcode
 Usage
 -----
 
-	$ droid.rb-[h|V] -[m] [MODEL|all] -[t] TYPE
+```
+$ droid.rb -[dhm:t:V]
 
-	-V:          Display version information
-	-h:          Display usage information
-	-m all:      Display firmware information for all machines
-	-m MODEL:    Display firmware information for a specific model (eg. M620)
-	-t:          Search for type of firmware (e.g. BIOS)
+-V:          Display version information
+-h:          Display usage information
+-m all:      Display firmware information for all machines
+-m MODEL:    Display firmware information for a specific model (eg. M620)
+-t:          Search for type of firmware (e.g. BIOS)
+-d:          Download firmware
+```
 
 Examples
 --------
