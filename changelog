@@ -1,0 +1,6 @@
+0.0.1: August 4 2013
+Initial version
+0.0.2: Thu 12 Jun 2014 09:27:00 EST
+Updated version to support change in Dell Firmware page
+0.0.3: Thu 12 Jun 2014 10:00:47 EST
+Added code to download patches
