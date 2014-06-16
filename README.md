@@ -27,7 +27,7 @@ Usage
 -----
 
 ```
-$ droid.rb -[dhm:t:V]
+$ druid.rb -[dhm:t:V]
 
 -V:          Display version information
 -h:          Display usage information
@@ -43,7 +43,7 @@ Examples
 Get the available M600 BIOS firmware:
 
 ```
-$ droid.rb -m m600 -t BIOS
+$ druid.rb -m m600 -t BIOS
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
@@ -53,7 +53,7 @@ http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
 Download BIOS:
 
 ```
-$ droid.rb -m m620 -t BIOS -d
+$ druid.rb -m m620 -t BIOS -d
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
@@ -68,14 +68,14 @@ Saving to: '/Users/spindler/Code/daft/firmware/m620/M620-020210C.efi'
 
 100%[===============================================================================================>] 8,477,452   8.35MB/s   in 1.0s
 
-2014-06-12 09:54:49 (8.35 MB/s) - '/Users/spindler/Code/droid/firmware/m620/M620-020210C.efi' saved [8477452/8477452]
+2014-06-12 09:54:49 (8.35 MB/s) - '/Users/spindler/Code/druid/firmware/m620/M620-020210C.efi' saved [8477452/8477452]
 
 ```
 
 Get all available firmware/software for M620:
 
 ```
-$ droid -m 620
+$ druid -m 620
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
