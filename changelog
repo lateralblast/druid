@@ -6,3 +6,5 @@ Updated version to support change in Dell Firmware page
 Added code to download patches
 0.0.4: Wed 28 Jan 2015 15:53:30 AEDT
 Cleaned up version detection
+0.0.5: Wed 28 Jan 2015 18:06:39 AEDT
+Added code to get documentation

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.0.4
+# Version:      0.0.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -22,7 +22,7 @@ require 'getopt/std'
 
 fw_dir   = Dir.pwd+"/firmware"
 download = "n"
-options  = "dhm:t:S:"
+options  = "dhm:p:t:S:"
 results  = {}
 
 def print_results(results,model_name,fw_dir,download)
@@ -113,6 +113,38 @@ def get_model_list(top_url)
   return models
 end
 
+def print_document_urls(model_name,base_url,hw_upcase,fw_dir,download)
+  owners_url = base_url+model_name+"_owner%27s%20manual_en-us.pdf"
+  setup_url  = base_url+model_name+"_setup%20guide_en-us.pdf"
+  fw_dir = fw_dir+"/"+model_name
+  if !File.directory?(fw_dir) and download == "y"
+    Dir.mkdir(fw_dir)
+  end
+  puts hw_upcase+" "+model_name.upcase+":"
+  puts owners_url
+  puts setup_url
+  if download == "y"
+    [ owners_url, setup_url ].each do |url|
+      file = File.basename(url)
+      file = fw_dir+"/"+file
+      if !File.exist?(file)
+        puts "Downloading "+url+" to "+file
+        %x[wget "#{url}" -O #{file}]
+      end
+      if file.match(/owner/)
+        if !File.size?(file)
+          hw_type = hw_upcase.downcase
+          url     = "http://topics-cdn.dell.com/pdf/"+hw_type+"-"+model_name+"_Owner's%20Manual_en-us.pdf"
+          puts "Downloading "+url+" to "+file
+          %x[wget "#{url}" -O #{file}]
+        end
+      end
+    end
+  end
+  puts
+  return
+end
+
 def print_version()
   file_array = IO.readlines $0
   version    = file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
@@ -132,7 +164,7 @@ def print_usage(options)
   puts "             If no type is given a list of models will be returned"
   puts "-m MODEL:    Display firmware information for a specific model (eg. M620)"
   puts "-t:          Search for type of firmware e.g. BIOS"
-  puts "-d:          Download firmware"
+  puts "-d:          Download firmware or documentation"
   puts "-S Hardware: Set hardware type to (Default is PowerEdge)"
   puts
   return
@@ -160,7 +192,11 @@ else
   end
 end
 top_url  = "http://www.dell.com/support/troubleshooting/us/en/19/ProductSelector/Select/FamilySelection?CategoryPath=all-products%2Fesuprt_ser_stor_net%2Fesuprt_"+hw_type+"&Family="+hw_upcase+"&DisplayCrumbs=Product%2BType%40%2CServers%252c%2BStorage%2Band%2BNetworking%40%2C"+hw_upcase+"&rquery=na&sokey=solink"
-base_url = "http://www.dell.com/support/drivers/us/en/19/Product/"+hw_type+"-"
+if opt["m"]
+  base_url = "http://www.dell.com/support/drivers/us/en/19/Product/"+hw_type+"-"
+else
+  base_url = "ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_"+hw_type+"/"+hw_type+"-"
+end
 
 if opt["V"]
   print_version()
@@ -183,6 +219,19 @@ if opt["d"]
   download = "y"
 end
 
+if opt["p"]
+  model_name = opt["p"]
+  puts
+  if model_name.match(/all/)
+    models = get_model_list(top_url)
+    models.each do |model_name|
+      print_document_urls(model_name,base_url,hw_upcase,fw_dir,download)
+    end
+  else
+    print_document_urls(model_name,base_url,hw_upcase,fw_dir,download)
+  end
+end
+
 if opt["m"]
   model_name = opt["m"]
   if model_name.match(/all/)
@@ -196,7 +245,7 @@ if opt["m"]
           puts hw_upcase+" "+model_name.upcase+":\t"+model_url
         end
       else
-        results   = get_firmware_info(model_url,search_term,results)
+        results = get_firmware_info(model_url,search_term,results)
         print_results(results,model_name,fw_dir,download)
       end
     end

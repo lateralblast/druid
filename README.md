@@ -27,14 +27,17 @@ Usage
 -----
 
 ```
-$ druid.rb -[dhm:t:V]
+$ druid.rb -[dhm:t:S:]
 
 -V:          Display version information
 -h:          Display usage information
 -m all:      Display firmware information for all machines
+             If no type is given a list of models will be returned
 -m MODEL:    Display firmware information for a specific model (eg. M620)
--t:          Search for type of firmware (e.g. BIOS)
+-t:          Search for type of firmware e.g. BIOS
 -d:          Download firmware
+-S Hardware: Set hardware type to (Default is PowerEdge)
+-p MODEL:    Display links to manuals for model
 ```
 
 Examples
@@ -48,6 +51,193 @@ $ druid.rb -m m600 -t BIOS
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
 
+```
+
+Get available documentation:
+
+```
+$ druid.rb -p m620
+
+PowerEdge M620:
+ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_poweredge/poweredge-m620_owner%27s%20manual_en-us.pdf
+ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_poweredge/poweredge-m620_setup%20guide_en-us.pdf
+
+```
+
+
+If no type is specified, and no firmware type is specified a list of models and URLs will be returned:
+
+```
+PowerEdge 800:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-800#
+PowerEdge R510:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r510#
+PowerEdge 830:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-830#
+PowerEdge R515:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r515#
+PowerEdge 840:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-840#
+PowerEdge R520:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r520#
+PowerEdge 1300:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1300#
+PowerEdge 8450:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-8450#
+PowerEdge R530:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r530#
+PowerEdge 1400SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1400sc#
+PowerEdge 850:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-850#
+PowerEdge R610:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r610#
+PowerEdge 1500SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1500sc#
+PowerEdge 860:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-860#
+PowerEdge R620:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r620#
+PowerEdge 1550:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1550#
+PowerEdge C1100:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c1100#
+PowerEdge R630:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r630#
+PowerEdge 1600SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1600sc#
+PowerEdge C2100:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c2100#
+PowerEdge R710:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r710#
+PowerEdge 1650:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1650#
+PowerEdge C410X:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c410x#
+PowerEdge R715:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r715#
+PowerEdge 1655MC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1655mc#
+PowerEdge C4130:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c4130#
+PowerEdge R720:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r720#
+PowerEdge 1750:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1750#
+PowerEdge C5000:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c5000#
+PowerEdge R720XD:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r720xd#
+PowerEdge 1800:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1800#
+PowerEdge C5125:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c5125#
+PowerEdge R730:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r730#
+PowerEdge 1850:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1850#
+PowerEdge C5220:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c5220#
+PowerEdge R730XD:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r730xd#
+PowerEdge 1855:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1855#
+PowerEdge C6100:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c6100#
+PowerEdge R805:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r805#
+PowerEdge 1900:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1900#
+PowerEdge C6105:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c6105#
+PowerEdge R810:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r810#
+PowerEdge 1950:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1950#
+PowerEdge C6145:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c6145#
+PowerEdge R815:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r815#
+PowerEdge 1955:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1955#
+PowerEdge C6220:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c6220#
+PowerEdge R820:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r820#
+PowerEdge 2100:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2100#
+PowerEdge C6220:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c6220#
+PowerEdge R900:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r900#
+PowerEdge 2200:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2200#
+PowerEdge C8000:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-c8000#
+PowerEdge R905:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r905#
+PowerEdge 2300:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2300#
+PowerEdge EL:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-el#
+PowerEdge R910:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r910#
+PowerEdge 2400:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2400#
+PowerEdge EMS1434:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-ems1434#
+PowerEdge R920:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r920#
+PowerEdge 2450:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2450#
+PowerEdge EMS1634:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-ems1634#
+PowerEdge 420:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-420#
+PowerEdge 2500:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2500#
+PowerEdge EMS753:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-ems753#
+PowerEdge 430:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-430#
+PowerEdge 2500SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2500sc#
+PowerEdge FC630:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-fc630#
+PowerEdge 440:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-440#
+PowerEdge 2550:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2550#
+PowerEdge FM120:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-fm120#
+PowerEdge 1420SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1420sc#
+PowerEdge XEO2600:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xeo2600#
+PowerEdge FX2:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-fx2#
+PowerEdge 1425SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1425sc#
+PowerEdge XEO2650:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xeo2650#
+PowerEdge M1000E:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m1000e#
+PowerEdge 1430SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1430sc#
+PowerEdge 2800:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2800#
+PowerEdge M420:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m420#
+PowerEdge 1435SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-1435sc#
+PowerEdge 2850:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2850#
+PowerEdge M520:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m520#
+PowerEdge SDS:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-sds#
+PowerEdge 2900:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2900#
+PowerEdge M520P:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m520p#
+PowerEdge 486:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-486#
+PowerEdge 2950:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2950#
+PowerEdge M600:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m600#
+PowerEdge SP5:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-sp5#
+PowerEdge 2970:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-2970#
+PowerEdge M605:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m605#
+PowerEdge SP5:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-sp5#
+PowerEdge 300:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-300#
+PowerEdge M610:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m610#
+PowerEdge SP51:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-sp51#
+PowerEdge 300SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-300sc#
+PowerEdge M610X:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m610x#
+PowerEdge SP575:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-sp575#
+PowerEdge 3250:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-3250#
+PowerEdge M620:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m620#
+PowerEdge T100:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t100#
+PowerEdge 350:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-350#
+PowerEdge M620P:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m620p#
+PowerEdge T105:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t105#
+PowerEdge 400SC:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-400sc#
+PowerEdge M630:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m630#
+PowerEdge T110:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t110#
+PowerEdge 4100:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-4100#
+PowerEdge M630P:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m630p#
+PowerEdge T110:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t110#
+PowerEdge 4300:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-4300#
+PowerEdge M710:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m710#
+PowerEdge T20:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t20#
+PowerEdge 4350:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-4350#
+PowerEdge M710HD:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m710hd#
+PowerEdge T300:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t300#
+PowerEdge 4400:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-4400#
+PowerEdge M805:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m805#
+PowerEdge T310:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t310#
+PowerEdge XEON4600:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xeon4600#
+PowerEdge M820:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m820#
+PowerEdge T320:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t320#
+PowerEdge 500:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-500#
+PowerEdge M820P:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m820p#
+PowerEdge T410:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t410#
+PowerEdge 600:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-600#
+PowerEdge M905:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m905#
+PowerEdge T420:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t420#
+PowerEdge 6300:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-6300#
+PowerEdge M910:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m910#
+PowerEdge T430:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t430#
+PowerEdge 6350:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-6350#
+PowerEdge M915:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m915#
+PowerEdge T605:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t605#
+PowerEdge 6400:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-6400#
+PowerEdge R200:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r200#
+PowerEdge T610:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t610#
+PowerEdge 6450:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-6450#
+PowerEdge R210:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r210#
+PowerEdge T620:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t620#
+PowerEdge 650:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-650#
+PowerEdge R210:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r210#
+PowerEdge T630:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t630#
+PowerEdge XEO6600:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xeo6600#
+PowerEdge R220:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r220#
+PowerEdge T710:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-t710#
+PowerEdge XEO6650:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xeo6650#
+PowerEdge R300:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r300#
+PowerEdge VRTX:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-vrtx#
+PowerEdge 6800:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-6800#
+PowerEdge R310:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r310#
+PowerEdge WEB:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-web#
+PowerEdge 6850:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-6850#
+PowerEdge R320:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r320#
+PowerEdge 486:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-486#
+PowerEdge 6950:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-6950#
+PowerEdge R410:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r410#
+PowerEdge XE5:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xe5#
+PowerEdge 700:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-700#
+PowerEdge R415:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r415#
+PowerEdge XE5:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xe5#
+PowerEdge 7150:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-7150#
+PowerEdge R420:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r420#
+PowerEdge XE51:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-xe51#
+PowerEdge 7250:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-7250#
+PowerEdge R420XR:	http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r420xr#
+PowerEdge 5133:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-5133#
+PowerEdge 750:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-750#
+PowerEdge R430:		http://www.dell.com/support/drivers/us/en/19/Product/poweredge-r430#
 ```
 
 Download BIOS:
