@@ -4,3 +4,5 @@ Initial version
 Updated version to support change in Dell Firmware page
 0.0.3: Thu 12 Jun 2014 10:00:47 EST
 Added code to download patches
+0.0.4: Wed 28 Jan 2015 15:53:30 AEDT
+Cleaned up version detection
