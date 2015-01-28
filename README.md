@@ -35,7 +35,7 @@ $ druid.rb -[dhm:t:S:]
              If no type is given a list of models will be returned
 -m MODEL:    Display firmware information for a specific model (eg. M620)
 -t:          Search for type of firmware e.g. BIOS
--d:          Download firmware
+-d:          Download firmware or documentation
 -S Hardware: Set hardware type to (Default is PowerEdge)
 -p MODEL:    Display links to manuals for model
 ```
