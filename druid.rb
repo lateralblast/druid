@@ -16,9 +16,26 @@
 
 require 'nokogiri'
 require 'open-uri'
-require 'selenium-webdriver'
-require 'phantomjs'
 require 'getopt/std'
+
+def install_gem(load_name, install_name)
+  puts "Information:\tInstalling #{install_name}"
+  %x[gem install #{install_name}]
+  Gem.clear_paths
+  require "#{load_name}"
+end
+
+begin
+  require 'selenium-webdriver'
+rescue LoadError
+  install_gem('selenium-webdriver', 'selenium-webdriver -v 3.6.0')
+end
+
+begin
+  require 'phantomjs'
+rescue LoadError
+  install_gem('phantomjs', 'phantomjs')
+end
 
 fw_dir   = Dir.pwd+"/firmware"
 download = "n"
@@ -252,6 +269,7 @@ if opt["m"]
   else
     model_name = model_name.downcase
     model_url  = base_url+model_name+"#"
+    puts model_url
     results    = get_firmware_info(model_url,search_term,results)
     print_results(results,model_name,fw_dir,download)
   end

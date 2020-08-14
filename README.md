@@ -3,6 +3,8 @@
 DRUID
 =====
 
+*** Note this script does not currently work fully as the URL and formating has been updated ***
+
 Dell Retrieve Update Information and Download
 
 A ruby script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
