@@ -17,6 +17,21 @@ If given a specific model it will parse the firmware page for that model, eg for
 
 https://www.dell.com/support/home/en-au/product-support/product/poweredge-r610/drivers
 
+Requirements
+------------
+
+Required gems:
+
+- rubygems
+- nokogiri
+- open-uri
+- getopt/std
+- fileutils
+- selenium-webdriver
+- mechanize
+
+If not installed, the script will attempt to install the required gems.
+
 License
 -------
 
