@@ -3,16 +3,19 @@
 DRUID
 =====
 
-*** Note this script does not currently work fully as the URL and formating has been updated ***
-
 Dell Retrieve Update Information and Download
 
 A ruby script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
 
-If given a specific model it will parse the firmware page for that model, eg for the M620:
+Previously this script used PhantomJS, it has been updated to use the Firefox headless driver in Selenium.
 
-http://www.dell.com/support/drivers/us/en/19/Product/poweredge-m620#
+By default the script will fetch only the lastest driver information.
+To fetch a full list the -A switch can be used.
+
+If given a specific model it will parse the firmware page for that model, eg for the R610:
+
+https://www.dell.com/support/home/en-au/product-support/product/poweredge-r610/drivers
 
 If asked to print all models it will determine the available models from this URL before processing them:
 
@@ -45,7 +48,7 @@ $ druid.rb -[dhm:t:S:]
 Examples
 --------
 
-Get the available M600 BIOS firmware:
+Get the available M620 BIOS firmware:
 
 ```
 $ druid.rb -m m600 -t BIOS
