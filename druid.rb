@@ -296,7 +296,6 @@ if opt["m"]
     model_name = model_name.downcase
     model_url  = "https://www.dell.com/support/home/en-au/product-support/product/"+hw_type+"-"+model_name+"/drivers"
     # model_url  = base_url+model_name+"#"
-    puts model_url
     results = get_firmware_info(model_url,search_term,results,get_all)
     print_results(results,model_name,fw_dir,download)
   end
