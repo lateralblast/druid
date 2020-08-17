@@ -1,7 +1,7 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -W:no-deprecated
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.0.5
+# Version:      0.0.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -14,9 +14,7 @@
 # Description:  Ruby script to get available firmware from Dell site
 #               http://www.dell.com/support/troubleshooting/us/en/19/ProductSelector/Select/FamilySelection?CategoryPath=all-products%2Fesuprt_ser_stor_net%2Fesuprt_poweredge&Family=PowerEdge&DisplayCrumbs=Product%2BType%40%2CServers%252c%2BStorage%2Band%2BNetworking%40%2CPowerEdge&rquery=na&sokey=solink
 
-require 'nokogiri'
-require 'open-uri'
-require 'getopt/std'
+# Install gems if they can't be loaded
 
 def install_gem(load_name, install_name)
   puts "Information:\tInstalling #{install_name}"
@@ -25,21 +23,23 @@ def install_gem(load_name, install_name)
   require "#{load_name}"
 end
 
-begin
-  require 'selenium-webdriver'
-rescue LoadError
-  install_gem('selenium-webdriver', 'selenium-webdriver -v 3.6.0')
-end
+# Required gem list
 
-begin
-  require 'phantomjs'
-rescue LoadError
-  install_gem('phantomjs', 'phantomjs')
+gem_list = [ "rubygems", "nokogiri", "open-uri", "getopt/std", "fileutils", "selenium-webdriver", "mechanize" ]
+
+# Try to load gems
+
+for gem_name in gem_list
+  begin
+    require "#{gem_name}"
+  rescue LoadError
+    install_gem(gem_name, gem_name)
+  end
 end
 
 fw_dir   = Dir.pwd+"/firmware"
 download = "n"
-options  = "dhm:p:t:S:"
+options  = "Adhm:p:o:t:S:"
 results  = {}
 
 def print_results(results,model_name,fw_dir,download)
@@ -91,25 +91,42 @@ def get_version_string(string)
   return string
 end
 
-def get_firmware_info(model_url,search_term,results)
-  driver = Selenium::WebDriver.for :phantomjs
+def get_firmware_info(model_url,search_term,results,get_all)
+  opt = Selenium::WebDriver::Firefox::Options.new
+  opt.add_argument('--headless')
+  driver = Selenium::WebDriver.for :firefox, :options => opt
   driver.get(model_url)
-  info = driver.page_source.split(/DriverName/)
-  info.each do |data|
-    if data.match(/DellHttpFileLocation/)
-      name = data.split(/&quot;:&quot;/)[1].split(/&quot;,&quot;/)[0].gsub(/&amp;/,"&").gsub(/\[|\]/,"").gsub(/\\\//,"")
-      vers = get_version_string(name)
-      if !vers.match(/[0-9]/)
-        vers = data.split(/DellVer/)[1].split(/&quot;:&quot;/)[1].split(/&quot;,&quot;/)[0]
-      end
-      url  = data.split(/DellHttpFileLocation/)[1].split(/&quot;:&quot;/)[1].split(/&quot;,&quot;/)[0].gsub(/\\/,"")
-      if search_term == "list"
-        name = name+" ("+vers+")"
-        results[name] = url
-      else
-        if name.downcase.match(/#{search_term.downcase}/) or vers.downcase.match(/#{search_term.downcase}/)
-          name = name+" ("+vers+")"
-          results[name] = url
+  sleep(5)
+  if get_all == true
+    driver.find_element(id: "paginationRow").click
+    sleep(5)
+  end
+  info = driver.page_source
+  doc  = Nokogiri::HTML(info)
+  name = ""
+  link = ""
+  doc.search("section").each do |section|
+    section.search("table").each do |table|
+      table.search("tr").each do |row|
+        if !row.text.match(/NameCategoryRelease/)
+          row.search("td").each do |column|
+            if column.to_s.match(/href/)
+              if column.to_s.match(/Download/)
+                link = column.to_s.split(/href="/)[1].split(/" class="/)[0]
+              end
+            else
+              if column.to_s.match(/dl-desk-view/)
+                name = column.text
+              else
+                name = name+", "+column.text
+              end
+            end
+          end
+          if name.match(/[a-z]/)
+            if search_term.match(/list/) or name.downcase.match(/#{search_term.downcase}/)
+              results[name] = link
+            end
+          end
         end
       end
     end
@@ -177,9 +194,11 @@ def print_usage(options)
   puts
   puts "-V:          Display version information"
   puts "-h:          Display usage information"
+  puts "-A:          Display all versions (by default only latest will be shown)"
   puts "-m all:      Display firmware information for all machines"
   puts "             If no type is given a list of models will be returned"
   puts "-m MODEL:    Display firmware information for a specific model (eg. M620)"
+  puts "-o OS:       Search by OS (not yet implemented)"
   puts "-t:          Search for type of firmware e.g. BIOS"
   puts "-d:          Download firmware or documentation"
   puts "-S Hardware: Set hardware type to (Default is PowerEdge)"
@@ -213,6 +232,12 @@ if opt["m"]
   base_url = "http://www.dell.com/support/drivers/us/en/19/Product/"+hw_type+"-"
 else
   base_url = "ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_"+hw_type+"/"+hw_type+"-"
+end
+
+if opt['A']
+  get_all = true
+else
+  get_all = false
 end
 
 if opt["V"]
@@ -254,7 +279,8 @@ if opt["m"]
   if model_name.match(/all/)
     models = get_model_list(top_url)
     models.each do |model_name|
-      model_url = base_url+model_name+"#"
+      # model_url = base_url+model_name+"#"
+      model_url = "https://www.dell.com/support/home/en-au/product-support/product/"+hw_type+"-"+model_name+"/drivers"
       if search_term == "list"
         if model_name.length < 5
           puts hw_upcase+" "+model_name.upcase+":\t\t"+model_url
@@ -262,15 +288,16 @@ if opt["m"]
           puts hw_upcase+" "+model_name.upcase+":\t"+model_url
         end
       else
-        results = get_firmware_info(model_url,search_term,results)
+        results = get_firmware_info(model_url,search_term,results,get_all)
         print_results(results,model_name,fw_dir,download)
       end
     end
   else
     model_name = model_name.downcase
-    model_url  = base_url+model_name+"#"
+    model_url  = "https://www.dell.com/support/home/en-au/product-support/product/"+hw_type+"-"+model_name+"/drivers"
+    # model_url  = base_url+model_name+"#"
     puts model_url
-    results    = get_firmware_info(model_url,search_term,results)
+    results = get_firmware_info(model_url,search_term,results,get_all)
     print_results(results,model_name,fw_dir,download)
   end
 end

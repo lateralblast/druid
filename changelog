@@ -1,10 +1,16 @@
-0.0.1: August 4 2013
-Initial version
-0.0.2: Thu 12 Jun 2014 09:27:00 EST
-Updated version to support change in Dell Firmware page
-0.0.3: Thu 12 Jun 2014 10:00:47 EST
-Added code to download patches
-0.0.4: Wed 28 Jan 2015 15:53:30 AEDT
-Cleaned up version detection
-0.0.5: Wed 28 Jan 2015 18:06:39 AEDT
-Added code to get documentation
+# 0.0.1: August 4 2013
+# Initial version
+# 0.0.2: Thu 12 Jun 2014 09:27:00 EST
+# Updated version to support change in Dell Firmware page
+# 0.0.3: Thu 12 Jun 2014 10:00:47 EST
+# Added code to download patches
+# 0.0.4: Wed 28 Jan 2015 15:53:30 AEDT
+# Cleaned up version detection
+# 0.0.5: Wed 28 Jan 2015 18:06:39 AEDT
+# Added code to get documentation
+# 0.0.6: Mon 17 Aug 2020 13:22:19 AEST
+# Added code to install required gems
+# 0.0.7: Mon 17 Aug 2020 16:33:58 AEST
+# Updated code to use firefox agent as phantomjs has been deprecated
+# 0.0.8: Mon 17 Aug 2020 20:35:58 AEST
+# Updated code to parse changed webpage
