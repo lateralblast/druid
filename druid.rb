@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -W:no-deprecated
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.0.8
+# Version:      0.0.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -98,6 +98,7 @@ def get_firmware_info(model_url,search_term,results,get_all)
   driver.get(model_url)
   sleep(5)
   if get_all == true
+    driver.find_element(id: "_evidon-accept-button").click
     driver.find_element(id: "paginationRow").click
     sleep(5)
   end
