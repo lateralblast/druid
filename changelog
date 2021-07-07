@@ -16,3 +16,5 @@
 # Updated code to parse changed webpage
 # 0.0.9: Tue  6 Jul 2021 23:08:33 AEST
 # Updated code to parse changed webpage
+# 0.1.0: Thu  8 Jul 2021 09:12:08 AEST
+# Code clean up and conversion to long options

@@ -43,18 +43,20 @@ Usage
 -----
 
 ```
-$ ./druid.rb -[dhm:t:S:]
+./druid.rb --help
 
--V:          Display version information
--h:          Display usage information
--A:          Display all versions (by default only latest will be shown)
--m all:      Display firmware information for all machines
-             If no type is given a list of models will be returned
--m MODEL:    Display firmware information for a specific model (eg. M620)
--t:          Search for type of firmware e.g. BIOS
--d:          Download firmware or documentation
--S Hardware: Set hardware type to (Default is PowerEdge)
--p MODEL:    Display links to manuals for model
+Usage:
+
+'--model',          Model e.g. M610, R720, etc
+'--platform',       Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
+'--type',           Type e.g. BIOS (defaults to listing all)
+'--search',         Search for a term
+'--fwdir',          Set a directory to download to
+'--output',         Output type, e.g. Text, HTML (defaults to Text)
+'--version',        Print version information
+'--help',           Print help information
+'--download',       Download file
+'--all',            Return all versions (by default only latest are returned)
 ```
 
 Examples
@@ -63,7 +65,7 @@ Examples
 Get the available M620 BIOS firmware:
 
 ```
-$ ./druid.rb -m m600 -t BIOS
+$ ./druid.rb --model m600 --type BIOS
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
@@ -73,7 +75,7 @@ http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
 Get available documentation:
 
 ```
-$ ./druid.rb -p m620
+$ ./druid.rb --model m620 --type manual
 
 PowerEdge M620:
 ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_poweredge/poweredge-m620_owner%27s%20manual_en-us.pdf
@@ -84,7 +86,7 @@ ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_poweredge/pow
 Download BIOS:
 
 ```
-$ ./druid.rb -m m620 -t BIOS -d
+$ ./druid.rb --model m620 --type BIOS --download
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
@@ -106,7 +108,7 @@ Saving to: '/Users/spindler/Code/daft/firmware/m620/M620-020210C.efi'
 List latest availabe firmware/software for R610:
 
 ```
-$ ./druid.rb -m r610
+$ ./druid.rb --model r610
 
 Dell Server BIOS R610 Version 6.6.0  UrgentDell Server BIOS R610 Version 6.6.0  Urgent, BIOS, 09 Jul 2018
 https://dl.dell.com/FOLDER05012920M/2/BIOS_0YV9D_WN64_6.6.0_01.EXE
@@ -142,7 +144,7 @@ https://dl.dell.com/FOLDER05421853M/1/ESM_Firmware_KPCCC_WN32_2.92_A00.EXE
 List latest availabe BIOS firmware/software for R610:
 
 ```
-$ ./druid.rb -m r610 -t bios
+$ ./druid.rb --model r610 --type bios
 
 Dell Server BIOS R610 Version 6.6.0  UrgentDell Server BIOS R610 Version 6.6.0  Urgent, BIOS, 09 Jul 2018
 https://dl.dell.com/FOLDER05012920M/2/BIOS_0YV9D_WN64_6.6.0_01.EXE
@@ -151,7 +153,7 @@ https://dl.dell.com/FOLDER05012920M/2/BIOS_0YV9D_WN64_6.6.0_01.EXE
 List all available firmware/software for M620:
 
 ```
-$ ./druid -m 620 -A
+$ ./druid --model m620 --all
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi

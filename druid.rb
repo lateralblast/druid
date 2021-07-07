@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -W:no-deprecated
 
-# Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.0.9
+# Name:         druid (Dell Retrieve Update Information and options['download'])
+# Version:      0.1.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -25,36 +25,41 @@ end
 
 # Required gem list
 
-gem_list = [ "rubygems", "nokogiri", "open-uri", "getopt/std", "fileutils", "selenium-webdriver", "mechanize" ]
+gem_list = [ "rubygems", "nokogiri", "open-uri", "getopt/std", "fileutils", "selenium-webdriver", "mechanize", "getopt/long" ]
 
 # Try to load gems
 
-for gem_name in gem_list
+gem_list.each do |load_name|
+  case load_name
+  when "getopt/long"
+    install_name = "getopt"
+  else
+    install_name = load_name
+  end
   begin
-    require "#{gem_name}"
+    require "#{load_name}"
   rescue LoadError
-    install_gem(gem_name, gem_name)
+    install_gem(load_name, install_name)
   end
 end
 
-fw_dir   = Dir.pwd+"/firmware"
-download = "n"
-options  = "Adhm:p:o:t:S:"
-results  = {}
+def_dir = Dir.pwd+"/firmware"
+options = {}
+results = {}
 
-def print_results(results,model_name,fw_dir,download)
-  fw_dir = fw_dir+"/"+model_name
-  if !File.directory?(fw_dir) and download == "y"
-    Dir.mkdir(fw_dir)
+def print_results(options,results)
+  options['fwdir'] = options['fwdir']+"/"+options['model']
+  if !File.directory?(options['fwdir']) and options['download'] == "y"
+    Dir.mkdir(options['fwdir'])
   end
   results.each do |name, url|
     puts
     puts name
     puts url
-    if download == "y"
+    if options['download'] == true
       puts
       file = File.basename(url)
-      file = fw_dir+"/"+file
+      file = options['fwdir']+"/"+file
       if !File.exist?(file)
         puts "Downloading "+url+" to "+file
         %x[wget "#{url}" -O #{file}]
@@ -91,13 +96,13 @@ def get_version_string(string)
   return string
 end
 
-def get_firmware_info(model_url,search_term,results,get_all)
+def get_firmware_info(options,results)
   opt = Selenium::WebDriver::Firefox::Options.new
   opt.add_argument('--headless')
   driver = Selenium::WebDriver.for :firefox, :options => opt
-  driver.get(model_url)
+  driver.get(options['modelurl'])
   sleep(5)
-  if get_all == true
+  if options['all'] == true
     driver.find_element(id: "_evidon-accept-button").click
     driver.find_element(id: "paginationRow").click
     sleep(5)
@@ -112,7 +117,7 @@ def get_firmware_info(model_url,search_term,results,get_all)
         if !row.text.match(/NameCategoryRelease/)
           row.search("td").each do |column|
             if column.to_s.match(/href/)
-              if column.to_s.match(/Download/)
+              if column.to_s.match(/download/)
                 link = column.to_s.split(/href="/)[1].split(/" class="/)[0]
               end
             else
@@ -124,7 +129,7 @@ def get_firmware_info(model_url,search_term,results,get_all)
             end
           end
           if name.match(/[a-z]/)
-            if search_term.match(/list/) or name.downcase.match(/#{search_term.downcase}/)
+            if options['type'].match(/list/) or name.downcase.match(/#{options['type'].downcase}/)
               results[name] = link
             end
           end
@@ -139,37 +144,37 @@ def get_model_list(top_url)
   models = []
   doc    = Nokogiri::HTML(open(top_url))
   doc.css('a.uif_link').each do |node|
-    model_name = node[:id]
-    if model_name.match(/poweredge/)
-      model_name = model_name.split("-")[1]
-      models.push(model_name)
+    options['model'] = node[:id]
+    if options['model'].match(/poweredge/)
+      options['model'] = options['model'].split("-")[1]
+      models.push(options['model'])
     end
   end
   return models
 end
 
-def print_document_urls(model_name,base_url,hw_upcase,fw_dir,download)
-  owners_url = base_url+model_name+"_owner%27s%20manual_en-us.pdf"
-  setup_url  = base_url+model_name+"_setup%20guide_en-us.pdf"
-  fw_dir = fw_dir+"/"+model_name
-  if !File.directory?(fw_dir) and download == "y"
-    Dir.mkdir(fw_dir)
+def print_document_urls(options)
+  owners_url = options['baseurl']+options['model']+"_owner%27s%20manual_en-us.pdf"
+  setup_url  = options['baseurl']+options['model']+"_setup%20guide_en-us.pdf"
+  options['fwdir'] = options['fwdir']+"/"+options['model']
+  if !File.directory?(options['fwdir']) and options['download'] == true
+    Dir.mkdir(options['fwdir'])
   end
-  puts hw_upcase+" "+model_name.upcase+":"
+  puts options['hwupcase']+" "+options['model'].upcase+":"
   puts owners_url
   puts setup_url
-  if download == "y"
+  if options['download'] == true
     [ owners_url, setup_url ].each do |url|
       file = File.basename(url)
-      file = fw_dir+"/"+file
+      file = options['fwdir']+"/"+file
       if !File.exist?(file)
         puts "Downloading "+url+" to "+file
         %x[wget "#{url}" -O #{file}]
       end
       if file.match(/owner/)
         if !File.size?(file)
-          hw_type = hw_upcase.downcase
-          url     = "http://topics-cdn.dell.com/pdf/"+hw_type+"-"+model_name+"_Owner's%20Manual_en-us.pdf"
+          options['hwtype'] = options['hwupcase'].downcase
+          url     = "http://topics-cdn.dell.com/pdf/"+options['hwtype']+"-"+options['model']+"_Owner's%20Manual_en-us.pdf"
           puts "Downloading "+url+" to "+file
           %x[wget "#{url}" -O #{file}]
         end
@@ -189,116 +194,173 @@ def print_version()
   return
 end
 
-def print_usage(options)
-  puts
-  puts "Usage: "+$0+" -["+options+"]"
-  puts
-  puts "-V:          Display version information"
-  puts "-h:          Display usage information"
-  puts "-A:          Display all versions (by default only latest will be shown)"
-  puts "-m all:      Display firmware information for all machines"
-  puts "             If no type is given a list of models will be returned"
-  puts "-m MODEL:    Display firmware information for a specific model (eg. M620)"
-  puts "-o OS:       Search by OS (not yet implemented)"
-  puts "-t:          Search for type of firmware e.g. BIOS"
-  puts "-d:          Download firmware or documentation"
-  puts "-S Hardware: Set hardware type to (Default is PowerEdge)"
-  puts
+# Handle output
+
+def handle_output(options,text)
+  if options['output'].to_s.match(/html/)
+    if text == ""
+      text = "<br>"
+    end
+  end
+  if options['output'].to_s.match(/text/)
+    puts text
+  end
+  return options
+end
+
+# Get valid switches and put in an array
+
+def get_valid_options()
+  file_array  = IO.readlines $0
+  option_list = file_array.grep(/\['--/)
+  return option_list
+end
+
+# Print script usage information
+
+def print_help(options)
+  switches     = []
+  long_switch  = ""
+  short_switch = ""
+  help_info    = ""
+  handle_output(options,"")
+  handle_output(options,"Usage: #{options['script']}")
+  handle_output(options,"")
+  option_list = get_valid_options()
+  option_list.each do |line|
+    if not line.match(/file_array/)
+      help_info    = line.split(/# /)[1]
+      switches     = line.split(/,/)
+      long_switch  = switches[0].gsub(/\[/,"").gsub(/\s+/,"")
+      short_switch = switches[1].gsub(/\s+/,"")
+      if short_switch.match(/REQ|BOOL/)
+        short_switch = ""
+      end
+      if long_switch.gsub(/\s+/,"").length < 7
+        handle_output(options,"#{long_switch},\t\t\t#{short_switch}\t#{help_info}")
+      else
+        if long_switch.gsub(/\s+/,"").length < 15
+          handle_output(options,"#{long_switch},\t\t#{short_switch}\t#{help_info}")
+        else
+          handle_output(options,"#{long_switch},\t#{short_switch}\t#{help_info}")
+        end
+      end
+    end
+  end
+  handle_output(options,"")
   return
 end
 
+include Getopt
+
 begin
-  opt = Getopt::Std.getopts(options)
+  options = Long.getopts(
+    ['--model', REQUIRED],      # Model e.g. M610, R720, etc
+    ['--platform', REQUIRED],   # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
+    ['--type', REQUIRED],       # Type e.g. BIOS (defaults to listing all)
+    ['--search', REQUIRED],     # Search for a term
+    ['--fwdir', REQUIRED],      # Set a directory to download to
+    ['--output', REQUIRED],     # Output type, e.g. Text, HTML (defaults to Text)
+    ['--version', BOOLEAN],     # Print version information
+    ['--help', BOOLEAN],        # Print help information
+    ['--download', BOOLEAN],    # Download file 
+    ['--all', BOOLEAN]          # Return all versions (by default only latest are returned)
+  )
 rescue
-  print_usage(options)
+  options['output'] = "text"
+  print_help(options)
   exit
 end
 
-if !opt["S"]
-  hw_type   = "poweredge"
-  hw_upcase = "PowerEdge"
+if !options['output']
+  options['output'] = "text"
+end
+
+if options['help'] == true
+  print_help(options)
+end
+
+if !options['fwdir']
+  options['fwdir'] = def_dir
+end
+
+if !options['platform']
+  options['hwtype']   = "poweredge"
+  options['hwupcase'] = "PowerEdge"
 else
-  hw_type = opt["S"].downcase
-  case hw_type
+  options['hwtype'] = options['platform'].downcase
+  case options['hwtype']
   when /vault/
-    hw_upcase = "PowerVault"
+    options['hwupcase'] = "PowerVault"
   when /compellent/
-    hw_upcase = hw_type.capitalize
+    options['hwupcase'] = options['hwtype'].capitalize
   else
-    hw_upcase = "PowerEdge"
+    options['hwupcase'] = "PowerEdge"
   end
 end
-top_url  = "http://www.dell.com/support/troubleshooting/us/en/19/ProductSelector/Select/FamilySelection?CategoryPath=all-products%2Fesuprt_ser_stor_net%2Fesuprt_"+hw_type+"&Family="+hw_upcase+"&DisplayCrumbs=Product%2BType%40%2CServers%252c%2BStorage%2Band%2BNetworking%40%2C"+hw_upcase+"&rquery=na&sokey=solink"
-if opt["m"]
-  base_url = "http://www.dell.com/support/drivers/us/en/19/Product/"+hw_type+"-"
+top_url  = "http://www.dell.com/support/troubleshooting/us/en/19/ProductSelector/Select/FamilySelection?CategoryPath=all-products%2Fesuprt_ser_stor_net%2Fesuprt_"+options['hwtype']+"&Family="+options['hwupcase']+"&DisplayCrumbs=Product%2BType%40%2CServers%252c%2BStorage%2Band%2BNetworking%40%2C"+options['hwupcase']+"&rquery=na&sokey=solink"
+if options['model']
+  options['baseurl'] = "http://www.dell.com/support/drivers/us/en/19/Product/"+options['hwtype']+"-"
 else
-  base_url = "ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_"+hw_type+"/"+hw_type+"-"
+  options['baseurl'] = "ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_"+options['hwtype']+"/"+options['hwtype']+"-"
 end
 
-if opt['A']
-  get_all = true
-else
-  get_all = false
+if options['version'] == true
+  print_version(options)
 end
 
-if opt["V"]
-  print_version()
+if !options['type']
+  options['type'] = "list"
 end
 
-if opt["h"]
-  print_usage(options)
-end
-
-if opt["t"]
-  search_term = opt["t"]
-else
-  search_term = "list"
-end
-
-if opt["d"]
-  if !File.directory?(fw_dir)
-    Dir.mkdir(fw_dir)
+if options['download'] == true
+  if !File.directory?(options['fwdir'])
+    Dir.mkdir(options['fwdir'])
   end
-  download = "y"
+  if options['model']
+    model_dir = options['fwdir']+"/"+options['model']
+    if !File.directory?(model_dir)
+      Dir.mkdir(model_dir)
+    end
+  end
 end
 
-if opt["p"]
-  model_name = opt["p"]
+if options['type'].to_s.match(/manual|pdf/)
   puts
-  if model_name.match(/all/)
+  if options['model'].match(/all/)
     models = get_model_list(top_url)
     models.each do |model_name|
-      print_document_urls(model_name,base_url,hw_upcase,fw_dir,download)
+      options['model'] = model_name
+      print_document_urls(options)
     end
   else
-    print_document_urls(model_name,base_url,hw_upcase,fw_dir,download)
+    print_document_urls(options)
   end
+  exit
 end
 
-if opt["m"]
-  model_name = opt["m"]
-  if model_name.match(/all/)
+if options['model']
+  if options['model'].match(/all/)
     models = get_model_list(top_url)
-    models.each do |model_name|
-      # model_url = base_url+model_name+"#"
-      model_url = "https://www.dell.com/support/home/en-au/product-support/product/"+hw_type+"-"+model_name+"/drivers"
-      if search_term == "list"
-        if model_name.length < 5
-          puts hw_upcase+" "+model_name.upcase+":\t\t"+model_url
+    models.each do |mode_name|
+      options['model']    = model_name
+      options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/"+options['hwtype']+"-"+options['model']+"/drivers"
+      if options['type'] == "list"
+        if options['model'].length < 5
+          puts options['hwupcase']+" "+options['model'].upcase+":\t\t"+options['modelurl']
         else
-          puts hw_upcase+" "+model_name.upcase+":\t"+model_url
+          puts options['hwupcase']+" "+options['model'].upcase+":\t"+options['modelurl']
         end
       else
-        results = get_firmware_info(model_url,search_term,results,get_all)
-        print_results(results,model_name,fw_dir,download)
+        results = get_firmware_info(options,results)
+        print_results(options,results)
       end
     end
   else
-    model_name = model_name.downcase
-    model_url  = "https://www.dell.com/support/home/en-au/product-support/product/"+hw_type+"-"+model_name+"/drivers"
-    # model_url  = base_url+model_name+"#"
-    results = get_firmware_info(model_url,search_term,results,get_all)
-    print_results(results,model_name,fw_dir,download)
+    options['model']    = options['model'].downcase
+    options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/"+options['hwtype']+"-"+options['model']+"/drivers"
+    results = get_firmware_info(options,results)
+    print_results(options,results)
   end
 end
 
