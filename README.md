@@ -91,13 +91,13 @@ $ ./druid.rb --model m620 --type BIOS --download
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
 
-Downloading http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi to /Users/spindler/Code/daft/firmware/m620/M620-020210C.efi
+Downloading http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi to /Users/spindler/Code/firmware/m620/M620-020210C.efi
 --2014-06-12 09:54:47--  http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
 Resolving downloads.dell.com... 23.205.116.120, 23.205.116.106
 Connecting to downloads.dell.com|23.205.116.120|:80... connected.
 HTTP request sent, awaiting response... 200 OK
 Length: 8477452 (8.1M) [text/plain]
-Saving to: '/Users/spindler/Code/daft/firmware/m620/M620-020210C.efi'
+Saving to: '/Users/spindler/Code/firmware/m620/M620-020210C.efi'
 
 100%[===============================================================================================>] 8,477,452   8.35MB/s   in 1.0s
 
