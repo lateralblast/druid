@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -W:no-deprecated
 
 # Name:         druid (Dell Retrieve Update Information and options['download'])
-# Version:      0.1.0
+# Version:      0.1.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -122,13 +122,18 @@ def get_firmware_info(options,results)
               end
             else
               if column.to_s.match(/dl-desk-view/)
-                name = column.text
+                name = column.to_s.split(/dl-desk-view">/)[1].split(/<span/)[0]
+                name = name.gsub(/\s+$/,"")
+                name = name.gsub(/\.$/,"")
               else
-                name = name+", "+column.text
+                if !name.match(/#{column.text}/)
+                  name = name+", "+column.text
+                end
               end
             end
           end
           if name.match(/[a-z]/)
+            name = name.gsub(/\s+/," ")
             if options['type'].match(/list/) or name.downcase.match(/#{options['type'].downcase}/)
               results[name] = link
             end
@@ -174,7 +179,7 @@ def print_document_urls(options)
       if file.match(/owner/)
         if !File.size?(file)
           options['hwtype'] = options['hwupcase'].downcase
-          url     = "http://topics-cdn.dell.com/pdf/"+options['hwtype']+"-"+options['model']+"_Owner's%20Manual_en-us.pdf"
+          url = "http://topics-cdn.dell.com/pdf/"+options['hwtype']+"-"+options['model']+"_Owner's%20Manual_en-us.pdf"
           puts "Downloading "+url+" to "+file
           %x[wget "#{url}" -O #{file}]
         end
