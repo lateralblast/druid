@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -W:no-deprecated
 
-# Name:         druid (Dell Retrieve Update Information and options['download'])
-# Version:      0.1.1
+# Name:         druid (Dell Retrieve Update Information and Download)
+# Version:      0.1.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -47,6 +47,8 @@ def_dir = Dir.pwd+"/firmware"
 options = {}
 results = {}
 
+# Print results
+
 def print_results(options,results)
   options['fwdir'] = options['fwdir']+"/"+options['model']
   if !File.directory?(options['fwdir']) and options['download'] == "y"
@@ -70,8 +72,9 @@ def print_results(options,results)
   return
 end
 
+# Get version information
+
 def get_version_string(string)
-  #string  = string.gsub(/\.$/,"")
   strings = string.split(/ /)
   strings.each do |test|
     if test.match(/[0-9]/) and test.match(/\./)
@@ -95,6 +98,8 @@ def get_version_string(string)
   end
   return string
 end
+
+# Get Firmware information
 
 def get_firmware_info(options,results)
   opt = Selenium::WebDriver::Firefox::Options.new
@@ -145,6 +150,8 @@ def get_firmware_info(options,results)
   return results
 end
 
+# Get list of models
+
 def get_model_list(top_url)
   models = []
   doc    = Nokogiri::HTML(open(top_url))
@@ -157,6 +164,8 @@ def get_model_list(top_url)
   end
   return models
 end
+
+# Get document URLs
 
 def print_document_urls(options)
   owners_url = options['baseurl']+options['model']+"_owner%27s%20manual_en-us.pdf"
@@ -189,6 +198,8 @@ def print_document_urls(options)
   puts
   return
 end
+
+# Print version information
 
 def print_version()
   file_array = IO.readlines $0
@@ -256,6 +267,8 @@ def print_help(options)
   return
 end
 
+# Get command line options
+
 include Getopt
 
 begin
@@ -263,7 +276,10 @@ begin
     ['--model', REQUIRED],      # Model e.g. M610, R720, etc
     ['--platform', REQUIRED],   # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
     ['--type', REQUIRED],       # Type e.g. BIOS (defaults to listing all)
+    ['--idrac', REQUIRED],      # iDRAC address (used for redfish)
     ['--search', REQUIRED],     # Search for a term
+    ['--username', REQUIRED],   # Username (used with iDRAC functions)
+    ['--password', REQUIRED],   # Password (used with iDRAC functions)
     ['--fwdir', REQUIRED],      # Set a directory to download to
     ['--output', REQUIRED],     # Output type, e.g. Text, HTML (defaults to Text)
     ['--version', BOOLEAN],     # Print version information
@@ -277,17 +293,37 @@ rescue
   exit
 end
 
+# Set default username
+
+if !options['username']
+  options['username'] = "root"
+end
+
+# Set default password
+
+if !options['password']
+  options['username'] = "calvin"
+end
+
+# Set default output type
+
 if !options['output']
   options['output'] = "text"
 end
+
+# Handle help switch
 
 if options['help'] == true
   print_help(options)
 end
 
+# Set default download directory
+
 if !options['fwdir']
   options['fwdir'] = def_dir
 end
+
+# Handle platform switch and set default if not given
 
 if !options['platform']
   options['hwtype']   = "poweredge"
@@ -311,12 +347,14 @@ else
 end
 
 if options['version'] == true
-  print_version(options)
+  print_version()
 end
 
 if !options['type']
   options['type'] = "list"
 end
+
+# Handle download switch and create download directory
 
 if options['download'] == true
   if !File.directory?(options['fwdir'])
@@ -329,6 +367,8 @@ if options['download'] == true
     end
   end
 end
+
+# Handle type switch
 
 if options['type'].to_s.match(/manual|pdf/)
   puts
@@ -343,6 +383,8 @@ if options['type'].to_s.match(/manual|pdf/)
   end
   exit
 end
+
+# Handle model switch
 
 if options['model']
   if options['model'].match(/all/)
