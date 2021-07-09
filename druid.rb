@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -W:no-deprecated
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.1.2
+# Version:      0.1.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -25,7 +25,10 @@ end
 
 # Required gem list
 
-gem_list = [ "rubygems", "nokogiri", "open-uri", "getopt/std", "fileutils", "selenium-webdriver", "mechanize", "getopt/long" ]
+gem_list = [ "rubygems", "nokogiri", "open-uri",
+             "getopt/std", "fileutils", "json",
+             "selenium-webdriver", "mechanize",
+             "getopt/long", "redfish_client" ]
 
 # Try to load gems
 
@@ -97,6 +100,37 @@ def get_version_string(string)
     end
   end
   return string
+end
+
+# Get iDRAC information
+
+def get_idrac_info(options)
+  url  = "https://"+options['idrac']
+  case options['get'].downcase
+  when /memory/
+    root = RedfishClient.new(url, prefix: "/redfish/v1/Systems", verify: false)
+    data = root
+  else
+    root = RedfishClient.new(url, prefix: "/redfish/v1", verify: false)
+    data = root
+  end
+  root.login(options['username'],options['password'])
+  json = JSON.parse(root.to_s)
+  case options['get'].downcase
+  when /tag/
+    value = json["Oem"]["Dell"]["ServiceTag"]
+  else
+    value = json
+  end
+  root.logout
+  pp value
+  return
+end
+
+# Set iDRAC information
+
+def set_idrac_info(options)
+  return
 end
 
 # Get Firmware information
@@ -284,6 +318,8 @@ begin
     ['--output', REQUIRED],     # Output type, e.g. Text, HTML (defaults to Text)
     ['--version', BOOLEAN],     # Print version information
     ['--help', BOOLEAN],        # Print help information
+    ['--get', REQUIRED],        # Get iDRAC parameter
+    ['--set', REQUIRED],        # Set iDRAC parameter
     ['--download', BOOLEAN],    # Download file 
     ['--all', BOOLEAN]          # Return all versions (by default only latest are returned)
   )
@@ -380,6 +416,18 @@ if options['type'].to_s.match(/manual|pdf/)
     end
   else
     print_document_urls(options)
+  end
+  exit
+end
+
+# Handle iDRAC switch
+
+if options['idrac']
+  if options['get']
+    get_idrac_info(options)
+  end
+  if options['set']
+    set_idrac_info(options)
   end
   exit
 end
