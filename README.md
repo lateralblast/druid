@@ -17,10 +17,39 @@ If given a specific model it will parse the firmware page for that model, eg for
 
 https://www.dell.com/support/home/en-au/product-support/product/poweredge-r610/drivers
 
+Notice
+------
+
+There are two scripts, a Ruby script and a Python script.
+
+I'm adding redfish support to the script to get information from the iDRAC.
+The Ruby redfish client module does not have all the features I need,
+therefore I am depricating the Ruby script and moving to Python.
+
 Requirements
 ------------
 
-Required gems:
+Required standard Python modules:
+
+- urllib.request
+- subprocess
+- platform
+- argparse
+- time
+- sys
+- os
+- re
+
+Required additional Python modules:
+
+- selenium
+- bs4
+- lxml
+- wget
+- paraminko
+- pexpect
+
+Required Ruby gems:
 
 - rubygems
 - nokogiri
@@ -30,7 +59,7 @@ Required gems:
 - selenium-webdriver
 - mechanize
 
-If not installed, the script will attempt to install the required gems.
+If not installed, the script will attempt to install the required modules.
 
 License
 -------

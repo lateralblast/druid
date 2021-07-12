@@ -24,3 +24,5 @@
 # Updated documentation
 # 0.1.3: Fri  9 Jul 2021 15:11:55 AEST
 # Initial Redfish client capability
+# 0.1.4: Mon 12 Jul 2021 19:43:42 AEST
+# Updated document URLs

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -W:no-deprecated
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.1.3
+# Version:      0.1.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -11,7 +11,7 @@
 # Distribution: UNIX
 # Vendor:       Lateral Blast
 # Packager:     Richard Spindler <richard@lateralblast.com.au>
-# Description:  Ruby script to get available firmware from Dell site
+# Description:  Ruby script to get available firmware from Dell site and iDRAC
 #               http://www.dell.com/support/troubleshooting/us/en/19/ProductSelector/Select/FamilySelection?CategoryPath=all-products%2Fesuprt_ser_stor_net%2Fesuprt_poweredge&Family=PowerEdge&DisplayCrumbs=Product%2BType%40%2CServers%252c%2BStorage%2Band%2BNetworking%40%2CPowerEdge&rquery=na&sokey=solink
 
 # Install gems if they can't be loaded
@@ -186,9 +186,10 @@ end
 
 # Get list of models
 
-def get_model_list(top_url)
-  models = []
-  doc    = Nokogiri::HTML(open(top_url))
+def get_model_list()
+  top_url = "http://www.dell.com/support/troubleshooting/us/en/19/ProductSelector/Select/FamilySelection?CategoryPath=all-products%2Fesuprt_ser_stor_net%2Fesuprt_"+options['hwtype']+"&Family="+options['hwupcase']+"&DisplayCrumbs=Product%2BType%40%2CServers%252c%2BStorage%2Band%2BNetworking%40%2C"+options['hwupcase']+"&rquery=na&sokey=solink"
+  models  = []
+  doc     = Nokogiri::HTML(open(top_url))
   doc.css('a.uif_link').each do |node|
     options['model'] = node[:id]
     if options['model'].match(/poweredge/)
@@ -202,11 +203,31 @@ end
 # Get document URLs
 
 def print_document_urls(options)
-  owners_url = options['baseurl']+options['model']+"_owner%27s%20manual_en-us.pdf"
-  setup_url  = options['baseurl']+options['model']+"_setup%20guide_en-us.pdf"
-  options['fwdir'] = options['fwdir']+"/"+options['model']
-  if !File.directory?(options['fwdir']) and options['download'] == true
-    Dir.mkdir(options['fwdir'])
+  if options['model']
+    if options['model'].downcase.match(/[m,r][0-9]1[0-9]/)
+      base_owners_url = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_"+options['hwtype']+"/"+options['hwtype']+"-"
+      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_"+options['hwtype']+"/"+options['hwtype']+"-"
+    else
+      base_owners_url = "https://dl.dell.com/topicspdf/"+options['hwtype']+"-"
+      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_"+options['hwtype']+"/"+options['hwtype']+"-"
+    end
+  else
+    base_owners_url = "https://dl.dell.com/topicspdf/"+options['hwtype']+"-"
+    base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_"+options['hwtype']+"/"+options['hwtype']+"-"
+  end
+  if options['model'].downcase.match(/[m,r][0-9]1[0-9]/)
+    if options['model'].match(/r610/)
+      owners_url = base_owners_url+options['model']+"_owner%%27s%%20manual2_en-us.pdf"
+    else
+      owners_url = base_owners_url+options['model']+"_owner%%27s%%20manual_en-us.pdf"
+    end
+  else
+    owners_url = base_owners_url+options['model']+"_owners-manual_en-us.pdf"
+  end
+  setup_url = base_setup_url+options['model']+"_setup%%20guide_en-us.pdf"
+  model_dir = options['fwdir']+"/"+options['model']
+  if !File.directory?(model_dir) and options['download'] == true
+    Dir.mkdir(model_dir)
   end
   puts options['hwupcase']+" "+options['model'].upcase+":"
   puts owners_url
@@ -375,12 +396,6 @@ else
     options['hwupcase'] = "PowerEdge"
   end
 end
-top_url  = "http://www.dell.com/support/troubleshooting/us/en/19/ProductSelector/Select/FamilySelection?CategoryPath=all-products%2Fesuprt_ser_stor_net%2Fesuprt_"+options['hwtype']+"&Family="+options['hwupcase']+"&DisplayCrumbs=Product%2BType%40%2CServers%252c%2BStorage%2Band%2BNetworking%40%2C"+options['hwupcase']+"&rquery=na&sokey=solink"
-if options['model']
-  options['baseurl'] = "http://www.dell.com/support/drivers/us/en/19/Product/"+options['hwtype']+"-"
-else
-  options['baseurl'] = "ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_"+options['hwtype']+"/"+options['hwtype']+"-"
-end
 
 if options['version'] == true
   print_version()
@@ -409,7 +424,7 @@ end
 if options['type'].to_s.match(/manual|pdf/)
   puts
   if options['model'].match(/all/)
-    models = get_model_list(top_url)
+    models = get_model_list()
     models.each do |model_name|
       options['model'] = model_name
       print_document_urls(options)
@@ -436,7 +451,7 @@ end
 
 if options['model']
   if options['model'].match(/all/)
-    models = get_model_list(top_url)
+    models = get_model_list(l)
     models.each do |mode_name|
       options['model']    = model_name
       options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/"+options['hwtype']+"-"+options['model']+"/drivers"
