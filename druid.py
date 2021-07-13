@@ -20,10 +20,15 @@ import urllib.request
 import subprocess
 import platform
 import argparse
+import requests
+import urllib3
 import time
+import json
 import sys
 import os
 import re
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from os.path import expanduser
 
@@ -105,6 +110,14 @@ try:
 except ImportError:
   install_and_import("pexpect")
   import pexpect
+
+# Load redfish
+
+try:
+  import redfish
+except ImportError:
+  install_and_import("redfish")
+  import redfish
 
 # Print version
 
@@ -314,6 +327,47 @@ def get_firmware_info(options,results):
               results[name] = link
   return results
 
+# Get iDRAC information
+
+def get_idrac_info(options):
+  if re.search(r"memory|tag|sku|power",options['get'].lower()):
+    rest_url = "/redfish/v1/Systems/System.Embedded.1"
+  else:
+    rest_url = "/redfish/v1"
+  base_url = "https://%s%s" % (options['ip'],rest_url)
+  response = requests.get(base_url, verify=False, auth=(options['username'], options['password']))
+  data = response.json()
+  if re.search(r"memory",options['get'].lower()):
+    print(data['MemorySummary']['TotalSystemMemoryGiB'])
+  if re.search(r"tag|sku",options['get'].lower()):
+    print(data['SKU'])
+  if re.search(r"power",options['get'].lower()):
+    print(data['PowerState'])
+
+# Set iDRAC information
+
+def set_idrac_info(options):
+  if re.search(r"power",options['set'].lower()):
+    rest_url   = "/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
+    reset_type = options['value'].lower()
+    reset_type = re.sub(r"on","On",reset_type)
+    reset_type = re.sub(r"off","ForceOff",reset_type)
+    reset_type = re.sub(r"reset","GracefulRestart",reset_type)
+    reset_type = re.sub(r"push|button","PushPowerButton",reset_type)
+    payload    = {'ResetType': reset_type}
+  else:
+    return
+  headers  = {'content-type': 'application/json'}
+  base_url = "https://%s%s" % (options['ip'],rest_url)
+  response = requests.post(base_url, data=json.dumps(payload), headers=headers, verify=False, auth=(options['username'], options['password']))
+  status   = response.status_code
+  if status == 204:
+    print("\n- PASS, status code %s returned, server power state successfully set to \"%s\"\n" % (status, options['value']))
+  else:
+    print("\n- FAIL, Command failed, status code %s returned\n" % status)
+    print(response.json())
+    exit()
+
 # Download file
 
 def download_file(options,url,file):
@@ -348,22 +402,24 @@ if sys.argv[-1] == sys.argv[0]:
 # Get command line arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--ip",required=False)            # Specify IP of iDRAC
-parser.add_argument("--get",required=False)           # Get Parameter
-parser.add_argument("--set",required=False)           # Set Parameter
-parser.add_argument("--type",required=False)          # Type e.g. BIOS (defaults to listing all)
-parser.add_argument("--model",required=False)         # Model e.g. M610, R720, etc
-parser.add_argument("--fwdir",required=False)         # Set a directory to download to
-parser.add_argument("--search",required=False)        # Search for a term
-parser.add_argument("--output",required=False)        # Output type, e.g. Text, HTML (defaults to Text)
-parser.add_argument("--platform",required=False)      # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
-parser.add_argument("--username",required=False)      # Set Username
-parser.add_argument("--password",required=False)      # Set Password
-parser.add_argument("--mask",action='store_true')     # Mask MAC addresses etc
-parser.add_argument("--version",action='store_true')  # Display version information
-parser.add_argument("--options",action='store_true')  # Display options information
-parser.add_argument("--download",action='store_true') # Download file
-parser.add_argument("--all",action='store_true')      # Return all versions (by default only latest are returned)
+parser.add_argument("--ip",required=False)              # Specify IP of iDRAC
+parser.add_argument("--get",required=False)             # Get Parameter
+parser.add_argument("--set",required=False)             # Set Parameter
+parser.add_argument("--type",required=False)            # Type e.g. BIOS (defaults to listing all)
+parser.add_argument("--model",required=False)           # Model e.g. M610, R720, etc
+parser.add_argument("--fwdir",required=False)           # Set a directory to download to
+parser.add_argument("--search",required=False)          # Search for a term
+parser.add_argument("--output",required=False)          # Output type, e.g. Text, HTML (defaults to Text)
+parser.add_argument("--value",required=False)           # Used with set, to set a value, e.g. On for Power
+parser.add_argument("--platform",required=False)        # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
+parser.add_argument("--username",required=False)        # Set Username
+parser.add_argument("--password",required=False)        # Set Password
+parser.add_argument("--all",action='store_true')        # Return all versions (by default only latest are returned)
+parser.add_argument("--mask",action='store_true')       # Mask MAC addresses etc
+parser.add_argument("--force",action='store_true')      # Ignore ping test etc
+parser.add_argument("--version",action='store_true')    # Display version information
+parser.add_argument("--options",action='store_true')    # Display options information
+parser.add_argument("--download",action='store_true')   # Download file
 
 options = vars(parser.parse_args())
 
@@ -407,6 +463,29 @@ if not options['output']:
 
 if not options['fwdir']:
   options['fwdir'] = def_dir
+
+# Handle username switch
+
+if not options['username']:
+  options['username'] = "root"
+
+# Handle password switch
+
+if not options['password']:
+  options['password'] = "calvin"
+
+# Handle ip switch
+
+if options['ip']:
+  if not options['force'] == True:
+    check_ping = check_ping(options['ip'])
+    if check_ping == False:
+      string = "Host %s not responding" % (options['ip'])
+      exit()
+  if options['get']:
+    get_idrac_info(options)
+  if options['set']:
+    set_idrac_info(options)
 
 # Handle platform switch and set default if not given
 
