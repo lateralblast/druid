@@ -30,3 +30,5 @@
 # Initial working python version
 # 0.1.6: Tue 13 Jul 2021 18:17:11 AEST
 # Added initial Redfish support
+# 0.1.7: Wed 14 Jul 2021 12:02:11 AEST
+# Added some more Redfish support

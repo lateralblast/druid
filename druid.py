@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.1.5
+# Version:      0.1.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -202,7 +202,6 @@ def handle_output(options,output):
   print(output)
   return
 
-
 # Execute command
 
 def execute_command(options,command):
@@ -212,44 +211,43 @@ def execute_command(options,command):
     string = "Output:\n%s" % (output)
     handle_output(options,string)
 
-
 # Get document URLs
 
 def print_document_urls(options):
   if options['model']:
     if re.search(r"[m,r][0-9]1[0-9]",options['model'].lower()):
-      base_owners_url = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'],options['hwtype'])
-      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'],options['hwtype'])
+      base_owners_url = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
+      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
     else:
       base_owners_url = "https://dl.dell.com/topicspdf/%s-" % (options['hwtype'])
-      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'],options['hwtype'])
+      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
   else:
     base_owners_url = "https://dl.dell.com/topicspdf/%s-" % (options['hwtype'])
-    base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'],options['hwtype'])
-  if re.search(r"[m,r][0-9]1[0-9]",options['model'].lower()):
-    if re.search(r"r610",options['model'].lower()):
+    base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
+  if re.search(r"[m,r][0-9]1[0-9]", options['model'].lower()):
+    if re.search(r"r610", options['model'].lower()):
       owners_url = "%s%s_owner%%27s%%20manual2_en-us.pdf" % (base_owners_url,options['model'])
     else:
       owners_url = "%s%s_owner%%27s%%20manual_en-us.pdf" % (base_owners_url,options['model'])
   else:
-    owners_url = "%s%s_owners-manual_en-us.pdf" % (base_owners_url,options['model'])
-  setup_url = "%s%s_setup%%20guide_en-us.pdf" % (base_setup_url,options['model'])
-  string    = "%s %s:" % (options['hwupcase'],options['model'])
-  handle_output(options,string)
-  handle_output(options,owners_url)
-  handle_output(options,setup_url)
+    owners_url = "%s%s_owners-manual_en-us.pdf" % (base_owners_url, options['model'])
+  setup_url = "%s%s_setup%%20guide_en-us.pdf" % (base_setup_url, options['model'])
+  string    = "%s %s:" % (options['hwupcase'], options['model'])
+  handle_output(options, string)
+  handle_output(options, owners_url)
+  handle_output(options, setup_url)
   if options['download'] == True:
     for url in [ owners_url, setup_url ]:
       file = os.file.basename(url)
-      file = "%s/%s" % (options['fwdir'],file)
-      download_file(options,url,file)
-      if re.search(r"owner",file):
+      file = "%s/%s" % (options['fwdir'], file)
+      download_file(options,url, file)
+      if re.search(r"owner", file):
         if not os.path.exists(file):
           options['hwtype'] = options['hwupcase'].downcase
-          url = "http://topics-cdn.dell.com/pdf/%s-%s_Owner's%%20Manual_en-us.pdf" % (options['hwtype'],options['model'])
+          url = "http://topics-cdn.dell.com/pdf/%s-%s_Owner's%%20Manual_en-us.pdf" % (options['hwtype'], options['model'])
           string  = "Downloading %s to %s" % (url,file)
           command = "wget %s -O %s" % (url,file)
-          handle_output(options,string)
+          handle_output(options, string)
           process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, )
   print()
   return
@@ -273,13 +271,13 @@ def get_model_list(options):
   driver = start_web_driver()
   driver.get(top_url)
   html_doc  = driver.page_source
-  html_doc  = BeautifulSoup(html_doc,features='lxml')
+  html_doc  = BeautifulSoup(html_doc, features='lxml')
   html_data = html_doc.find_all('li')
   for link in html_data:
     text = link.text
-    text = re.sub(r"^\s+|\s+$","",text)
-    if re.search(r"^Power[Edge,Vault]|^SC[0-9][0-9]|^[A-Z][0-9][0-9]",text):
-      if re.search(r"^Power",text):
+    text = re.sub(r"^\s+|\s+$","", text)
+    if re.search(r"^Power[Edge,Vault]|^SC[0-9][0-9]|^[A-Z][0-9][0-9]", text):
+      if re.search(r"^Power", text):
         model = text.split(" ")[1]
       else:
         model = text.split(" ")[0]
@@ -299,38 +297,48 @@ def get_firmware_info(options,results):
     driver.find_element_by_id("paginationRow").click()
     time.sleep(5)
   html_doc = driver.page_source
-  html_doc = BeautifulSoup(html_doc,features='lxml')
+  html_doc = BeautifulSoup(html_doc, features='lxml')
   for section in html_doc.select("section"):
     for table in section.select("table"):
       for row in table.select("tr"):
-        if not re.search(r"NameCategoryRelease",str(row)):
+        if not re.search(r"NameCategoryRelease", str(row)):
           for column in row.select("td"):
             if re.search(r"href",str(column)):
-              if re.search(r"download",str(column)):
+              if re.search(r"download", str(column)):
                 link = str(column)
                 link = link.split('href="')[1]
                 link = link.split('  class="')[0]
                 link = link.split('"')[0]
             else:
-              if re.search(r"dl-desk-view",str(column)):
+              if re.search(r"dl-desk-view", str(column)):
                 name = str(column)
                 name = name.split('dl-desk-view">')[1]
                 name = name.split('<span')[0]
-                name = re.sub(r"^\s+|\s+$","",name)
-                name = re.sub(r"\.$","",name)
+                name = re.sub(r"^\s+|\s+$", "", name)
+                name = re.sub(r"\.$", "", name)
 #              else:
 #                if not name.find(column.text):
 #                  name = "%s, %s" % (name,column.text)
-          if re.search(r"[a-z,A-Z]",name):
-            name = re.sub(r"\s+"," ",name)
+          if re.search(r"[a-z,A-Z]", name):
+            name = re.sub(r"\s+", " ", name)
             if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
               results[name] = link
   return results
 
+# Check iDRAC redfish support
+
+def check_idrac_redfish(options, base_url):
+  response = requests.get(base_url, verify=False, auth=(options['username'], options['password']))
+  data = response.json()
+  if response.status_code != 200:
+    print("\nWARNING: iDRAC version installed does not support this feature using Redfish API\n")
+    exit()
+
+
 # Get iDRAC information
 
 def get_idrac_info(options):
-  if re.search(r"memory|tag|sku|power",options['get'].lower()):
+  if re.search(r"memory|tag|sku|power|model|bios|cpu|hostname",options['get'].lower()):
     rest_url = "/redfish/v1/Systems/System.Embedded.1"
   else:
     rest_url = "/redfish/v1"
@@ -338,22 +346,34 @@ def get_idrac_info(options):
   response = requests.get(base_url, verify=False, auth=(options['username'], options['password']))
   data = response.json()
   if re.search(r"memory",options['get'].lower()):
+    print("MemorySummary->TotalSystemMemoryGiB:", end=" ")
     print(data['MemorySummary']['TotalSystemMemoryGiB'])
   if re.search(r"tag|sku",options['get'].lower()):
+    print("SKU:", end=" ")
     print(data['SKU'])
+  if re.search(r"model",options['get'].lower()):
+    print("Model", end=" ")
+    print(data['Model'])
   if re.search(r"power",options['get'].lower()):
+    print("PowerState:", end=" ")
     print(data['PowerState'])
+  if re.search(r"bios",options['get'].lower()):
+    print("BiosVersion:", end=" ")
+    print(data['BiosVersion'])
+  if re.search(r"hostname",options['get'].lower()):
+    print("HostName:", end=" ")
+    print(data['HostName'])
 
 # Set iDRAC information
 
 def set_idrac_info(options):
-  if re.search(r"power",options['set'].lower()):
+  if re.search(r"power", options['set'].lower()):
     rest_url   = "/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
     reset_type = options['value'].lower()
-    reset_type = re.sub(r"on","On",reset_type)
-    reset_type = re.sub(r"off","ForceOff",reset_type)
-    reset_type = re.sub(r"reset","GracefulRestart",reset_type)
-    reset_type = re.sub(r"push|button","PushPowerButton",reset_type)
+    reset_type = re.sub(r"on","On", reset_type)
+    reset_type = re.sub(r"off","ForceOff", reset_type)
+    reset_type = re.sub(r"reset","GracefulRestart", reset_type)
+    reset_type = re.sub(r"push|button","PushPowerButton", reset_type)
     payload    = {'ResetType': reset_type}
   else:
     return
@@ -362,9 +382,9 @@ def set_idrac_info(options):
   response = requests.post(base_url, data=json.dumps(payload), headers=headers, verify=False, auth=(options['username'], options['password']))
   status   = response.status_code
   if status == 204:
-    print("\n- PASS, status code %s returned, server power state successfully set to \"%s\"\n" % (status, options['value']))
+    print("\nPASS: status code %s returned, server power state successfully set to \"%s\"\n" % (status, options['value']))
   else:
-    print("\n- FAIL, Command failed, status code %s returned\n" % status)
+    print("\nFAIL: Command failed, status code %s returned\n" % status)
     print(response.json())
     exit()
 
@@ -380,7 +400,7 @@ def download_file(options,url,file):
 # Print results
 
 def print_results(options,results):
-  model_dir = "%s/%s" % (options['fwdir'],options['model'])
+  model_dir = "%s/%s" % (options['fwdir'], options['model'])
   for name,url in results.items(): 
     print()
     print(name)
@@ -389,8 +409,8 @@ def print_results(options,results):
       if not os.path.exists(model_dir):
         os.mkdir(model_dir)
       file = os.file.basename(url)
-      file = "%s/%s" % (model_dir,file)
-      download_file(options,url,file)
+      file = "%s/%s" % (model_dir, file)
+      download_file(options, url, file)
   print()
 
 # If we have no command line arguments print help
@@ -402,24 +422,24 @@ if sys.argv[-1] == sys.argv[0]:
 # Get command line arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--ip",required=False)              # Specify IP of iDRAC
-parser.add_argument("--get",required=False)             # Get Parameter
-parser.add_argument("--set",required=False)             # Set Parameter
-parser.add_argument("--type",required=False)            # Type e.g. BIOS (defaults to listing all)
-parser.add_argument("--model",required=False)           # Model e.g. M610, R720, etc
-parser.add_argument("--fwdir",required=False)           # Set a directory to download to
-parser.add_argument("--search",required=False)          # Search for a term
-parser.add_argument("--output",required=False)          # Output type, e.g. Text, HTML (defaults to Text)
-parser.add_argument("--value",required=False)           # Used with set, to set a value, e.g. On for Power
-parser.add_argument("--platform",required=False)        # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
-parser.add_argument("--username",required=False)        # Set Username
-parser.add_argument("--password",required=False)        # Set Password
-parser.add_argument("--all",action='store_true')        # Return all versions (by default only latest are returned)
-parser.add_argument("--mask",action='store_true')       # Mask MAC addresses etc
-parser.add_argument("--force",action='store_true')      # Ignore ping test etc
-parser.add_argument("--version",action='store_true')    # Display version information
-parser.add_argument("--options",action='store_true')    # Display options information
-parser.add_argument("--download",action='store_true')   # Download file
+parser.add_argument("--ip", required=False)              # Specify IP of iDRAC
+parser.add_argument("--get", required=False)             # Get Parameter
+parser.add_argument("--set", required=False)             # Set Parameter
+parser.add_argument("--type", required=False)            # Type e.g. BIOS (defaults to listing all)
+parser.add_argument("--model", required=False)           # Model e.g. M610, R720, etc
+parser.add_argument("--fwdir", required=False)           # Set a directory to download to
+parser.add_argument("--search", required=False)          # Search for a term
+parser.add_argument("--output", required=False)          # Output type, e.g. Text, HTML (defaults to Text)
+parser.add_argument("--value", required=False)           # Used with set, to set a value, e.g. On for Power
+parser.add_argument("--platform", required=False)        # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
+parser.add_argument("--username", required=False)        # Set Username
+parser.add_argument("--password", required=False)        # Set Password
+parser.add_argument("--all", action='store_true')        # Return all versions (by default only latest are returned)
+parser.add_argument("--mask", action='store_true')       # Mask MAC addresses etc
+parser.add_argument("--force", action='store_true')      # Ignore ping test etc
+parser.add_argument("--version", action='store_true')    # Display version information
+parser.add_argument("--options", action='store_true')    # Display options information
+parser.add_argument("--download", action='store_true')   # Download file
 
 options = vars(parser.parse_args())
 
@@ -533,21 +553,21 @@ if options['model']:
     for model_name in models:
       options['model']    = model_name
       options['model']    = options['model'].lower()
-      options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/%s-%s/drivers" % (options['hwtype'],options['model'])
+      options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/%s-%s/drivers" % (options['hwtype'], options['model'])
       if options['type'] == "list":
         if len(options['model']) < 5:
-          string = "%s %s:\t\t%s" % (options['hwupcase'],options['model'].upper(),options['modelurl'])
+          string = "%s %s:\t\t%s" % (options['hwupcase'], options['model'].upper(), options['modelurl'])
           handle_output(options,string)
         else:
-          string = "%s %s:\t%s" % (options['hwupcase'],options['model'].upper(),options['modelurl'])
-          handle_output(options,string)
+          string = "%s %s:\t%s" % (options['hwupcase'], options['model'].upper(), options['modelurl'])
+          handle_output(options, string)
       else:
-        results = get_firmware_info(options,results)
-        print_results(options,results)
+        results = get_firmware_info(options, results)
+        print_results(options, results)
   else:
     options['model']    = options['model'].lower()
-    options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/%s-%s/drivers" % (options['hwtype'],options['model'])
-    results = get_firmware_info(options,results)
-    print_results(options,results)
+    options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/%s-%s/drivers" % (options['hwtype'], options['model'])
+    results = get_firmware_info(options, results)
+    print_results(options, results)
 
 
