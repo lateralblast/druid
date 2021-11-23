@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.1.8
+# Version:      0.1.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -292,12 +292,17 @@ def get_firmware_info(options,results):
   driver = start_web_driver()
   driver.get(options['modelurl'])
   time.sleep(5)
-  if options['all'] == True:
-    driver.find_element_by_id("_evidon-accept-button").click()
-    driver.find_element_by_id("paginationRow").click()
-    time.sleep(5)
   html_doc = driver.page_source
   html_doc = BeautifulSoup(html_doc, features='lxml')
+  if options['all'] == True:
+    if re.search(r"_evidon-accept-button", str(html_doc)):
+      driver.find_element_by_id("_evidon-accept-button").click()
+      driver.find_element_by_id("paginationRow").click()
+    else:
+      driver.find_element_by_id("paginationRow").click()
+    time.sleep(5)
+    html_doc = driver.page_source
+    html_doc = BeautifulSoup(html_doc, features='lxml')
   for section in html_doc.select("section"):
     for table in section.select("table"):
       for row in table.select("tr"):
