@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.1.9
+# Version:      0.2.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -118,6 +118,10 @@ try:
 except ImportError:
   install_and_import("redfish")
   import redfish
+
+# Import By module from selenium webdriver
+
+from selenium.webdriver.common.by import By
 
 # Print version
 
@@ -296,10 +300,10 @@ def get_firmware_info(options,results):
   html_doc = BeautifulSoup(html_doc, features='lxml')
   if options['all'] == True:
     if re.search(r"_evidon-accept-button", str(html_doc)):
-      driver.find_element_by_id("_evidon-accept-button").click()
-      driver.find_element_by_id("paginationRow").click()
+      driver.find_element(By.ID, "_evidon-accept-button").click()
+      driver.find_element(By.ID, "paginationRow").click()
     else:
-      driver.find_element_by_id("paginationRow").click()
+      driver.find_element(By.ID, "paginationRow").click()
     time.sleep(5)
     html_doc = driver.page_source
     html_doc = BeautifulSoup(html_doc, features='lxml')
