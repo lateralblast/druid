@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.1.7
+# Version:      0.1.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -301,7 +301,7 @@ def get_firmware_info(options,results):
   for section in html_doc.select("section"):
     for table in section.select("table"):
       for row in table.select("tr"):
-        if not re.search(r"NameCategoryRelease", str(row)):
+        if re.search(r"tableRow_", str(row)):
           for column in row.select("td"):
             if re.search(r"href",str(column)):
               if re.search(r"download", str(column)):
@@ -316,7 +316,13 @@ def get_firmware_info(options,results):
                 name = name.split('<span')[0]
                 name = re.sub(r"^\s+|\s+$", "", name)
                 name = re.sub(r"\.$", "", name)
-#              else:
+              else:
+                if re.search(r"aria-label", str(column)):
+                  name = str(column)
+                  name = name.split('aria-label="')[1]
+                  name = name.split('" class=')[0]
+                  name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
+                  name = re.sub(r"\.$", "", name)
 #                if not name.find(column.text):
 #                  name = "%s, %s" % (name,column.text)
           if re.search(r"[a-z,A-Z]", name):
@@ -440,6 +446,7 @@ parser.add_argument("--force", action='store_true')      # Ignore ping test etc
 parser.add_argument("--version", action='store_true')    # Display version information
 parser.add_argument("--options", action='store_true')    # Display options information
 parser.add_argument("--download", action='store_true')   # Download file
+parser.add_argument("--verbose", action='store_true')    # Verbose flag
 
 options = vars(parser.parse_args())
 
@@ -562,11 +569,17 @@ if options['model']:
           string = "%s %s:\t%s" % (options['hwupcase'], options['model'].upper(), options['modelurl'])
           handle_output(options, string)
       else:
+        if options['verbose'] == True:
+          string = "URL: %s" % (options['modelurl'])
+          print("got here")
         results = get_firmware_info(options, results)
         print_results(options, results)
   else:
     options['model']    = options['model'].lower()
     options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/%s-%s/drivers" % (options['hwtype'], options['model'])
+    if options['verbose'] == True:
+      string = "URL: %s" % (options['modelurl'])
+      print(string)
     results = get_firmware_info(options, results)
     print_results(options, results)
 
