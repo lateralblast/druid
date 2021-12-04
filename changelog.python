@@ -38,3 +38,5 @@
 # Further updates for changes in website HTML
 # 0.2.0: Tue 23 Nov 2021 12:35:32 AEDT
 # Updated for changes in selenium module
+# 0.2.1: Sat  4 Dec 2021 12:12:57 AEDT
+# Added initial check and print code

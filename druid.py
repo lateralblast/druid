@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.0
+# Version:      0.2.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -130,6 +130,7 @@ def print_version(script_exe):
   version    = list(filter(lambda x: re.search(r"^# Version", x), file_array))[0].split(":")[1]
   version    = re.sub(r"\s+","",version)
   print(version)
+  return
 
 # Print help
 
@@ -138,6 +139,7 @@ def print_help(script_exe):
   command    = "%s -h" % (script_exe)
   os.system(command)
   print("\n")
+  return
 
 # Read a file into an array
 
@@ -166,6 +168,7 @@ def print_options(script_exe):
           string = "%s\t%s" % (option,info)
       print(string)
   print("\n")
+  return
 
 # Check IP
 
@@ -214,6 +217,7 @@ def execute_command(options,command):
   if options['verbose'] == True:
     string = "Output:\n%s" % (output)
     handle_output(options,string)
+  return
 
 # Get document URLs
 
@@ -348,11 +352,39 @@ def check_idrac_redfish(options, base_url):
   if response.status_code != 200:
     print("\nWARNING: iDRAC version installed does not support this feature using Redfish API\n")
     exit()
+  return
 
+# Get iDRAC information via SSH
 
-# Get iDRAC information
+def get_idrac_ssh_info(options):
+  if re.search(r"inventory", options['get'].lower()):
+    command = "racadm hwinventory"
+  ssh_session = start_ssh_session(options)
+  ssh_session.expect("/admin1-> ")
+  ssh_session.sendline(command)
+  ssh_session.expect("/admin1-> ")
+  output = ssh_session.before
+  output = output.decode()
+  return output
 
-def get_idrac_info(options):
+# Parse iDRAC hardware inventory via SSH
+
+def parse_idrac_ssh_hw_inventory(options):
+  inv_file = "%s/%s.hwinv" % (options['workdir'], options['ip'])
+  if not os.path.exists(inv_file):
+    hw_inv = get_idrac_ssh_info(options)
+    with open(inv_file, "w") as file:
+      file.write(hw_inv)
+  hw_inv = file_to_array(inv_file)
+  for line in hw_inv:
+    line = line.rstrip()
+    if options['print'] == True:
+      print(line)
+  return
+
+# Get iDRAC information via Redfish
+
+def get_idrac_redfish_info(options):
   if re.search(r"memory|tag|sku|power|model|bios|cpu|hostname",options['get'].lower()):
     rest_url = "/redfish/v1/Systems/System.Embedded.1"
   else:
@@ -378,10 +410,11 @@ def get_idrac_info(options):
   if re.search(r"hostname",options['get'].lower()):
     print("HostName:", end=" ")
     print(data['HostName'])
+  return
 
-# Set iDRAC information
+# Set iDRAC information via Redfish
 
-def set_idrac_info(options):
+def set_idrac_redfish_info(options):
   if re.search(r"power", options['set'].lower()):
     rest_url   = "/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
     reset_type = options['value'].lower()
@@ -402,19 +435,31 @@ def set_idrac_info(options):
     print("\nFAIL: Command failed, status code %s returned\n" % status)
     print(response.json())
     exit()
+  return
 
 # Download file
 
-def download_file(options,url,file):
+def download_file(options, url, file):
   if options['download'] == True:
     if not os.path.exists(file):
       string  = "Downloading %s to %s" % (url,file)
       command = "wget %s -O %s" % (url,file)
       handle_output(options,string)
+  return
+
+# Initiate SSH Session
+
+def start_ssh_session(options):
+  ssh_command = "ssh -o StrictHostKeyChecking=no"
+  ssh_command = "%s %s@%s" % (ssh_command, options['username'], options['ip'])
+  ssh_session = pexpect.spawn(ssh_command)
+  ssh_session.expect("assword: ")
+  ssh_session.sendline(options['password'])
+  return ssh_session
 
 # Print results
 
-def print_results(options,results):
+def print_results(options, results):
   model_dir = "%s/%s" % (options['fwdir'], options['model'])
   for name,url in results.items(): 
     print()
@@ -427,6 +472,7 @@ def print_results(options,results):
       file = "%s/%s" % (model_dir, file)
       download_file(options, url, file)
   print()
+  return
 
 # If we have no command line arguments print help
 
@@ -443,19 +489,24 @@ parser.add_argument("--set", required=False)             # Set Parameter
 parser.add_argument("--type", required=False)            # Type e.g. BIOS (defaults to listing all)
 parser.add_argument("--model", required=False)           # Model e.g. M610, R720, etc
 parser.add_argument("--fwdir", required=False)           # Set a directory to download to
+parser.add_argument("--check", required=False)           # Check installed against available (e.g. inventory)
 parser.add_argument("--search", required=False)          # Search for a term
 parser.add_argument("--output", required=False)          # Output type, e.g. Text, HTML (defaults to Text)
 parser.add_argument("--value", required=False)           # Used with set, to set a value, e.g. On for Power
+parser.add_argument("--method", required=False)          # Method to get iDRAC information (e.g. SSH or Redfish)
+parser.add_argument("--workdir", required=False)         # Work directory
 parser.add_argument("--platform", required=False)        # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
 parser.add_argument("--username", required=False)        # Set Username
 parser.add_argument("--password", required=False)        # Set Password
 parser.add_argument("--all", action='store_true')        # Return all versions (by default only latest are returned)
+parser.add_argument("--ssh", action='store_true')        # Use SSH for iDRAC
 parser.add_argument("--mask", action='store_true')       # Mask MAC addresses etc
 parser.add_argument("--force", action='store_true')      # Ignore ping test etc
-parser.add_argument("--version", action='store_true')    # Display version information
+parser.add_argument("--print", action='store_true')      # Print out information (e.g. inventory)
 parser.add_argument("--options", action='store_true')    # Display options information
-parser.add_argument("--download", action='store_true')   # Download file
+parser.add_argument("--version", action='store_true')    # Display version information
 parser.add_argument("--verbose", action='store_true')    # Verbose flag
+parser.add_argument("--download", action='store_true')   # Download file
 
 options = vars(parser.parse_args())
 
@@ -473,12 +524,10 @@ if options['options']:
   print_options(script_exe)
   exit()
 
-# Handle download switch
+# Handle workdir switch
 
-if options["download"]:
-  download = True
-else:
-  download = False
+if not options['workdir']:
+  options['workdir'] = script_dir
 
 # Set default username
 
@@ -518,10 +567,21 @@ if options['ip']:
     if check_ping == False:
       string = "Host %s not responding" % (options['ip'])
       exit()
-  if options['get']:
-    get_idrac_info(options)
-  if options['set']:
-    set_idrac_info(options)
+  if options['check']:
+    if re.search(r"inventory", options['check']):
+      options['get'] = options['check']
+      parse_idrac_ssh_hw_inventory(options)
+  else:
+    if options['get']:
+      if options['ssh'] == True:
+        get_idrac_redfish_info(options)
+      else:
+        get_idrac_ssh_info(options)
+    if options['set']:
+      if options['ssh'] == True:
+        set_idrac_redfish_info(options)
+      else:
+        set_idrac_ssh_info(options)
 
 # Handle platform switch and set default if not given
 
