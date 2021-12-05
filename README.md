@@ -132,24 +132,23 @@ Usage:
 Examples
 --------
 
-Get the available M620 BIOS firmware:
+Get the available M630 BIOS firmware:
 
 ```
-$ ./druid.rb --model m600 --type BIOS
+./druid.py --model r630 --type bios
 
-Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
-http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
-
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.13.0
+https://dl.dell.com/FOLDER07346772M/1/BIOS_74DF9_WN64_2.13.0.EXE
 ```
 
-Get available documentation:
+Get available R630 documentation:
 
 ```
-$ ./druid.rb --model m620 --type manual
+ ./druid.py --model r630 --type manual
 
-PowerEdge M620:
-ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_poweredge/poweredge-m620_owner%27s%20manual_en-us.pdf
-ftp://ftp.dell.com/Manuals/all-products/esuprt_ser_stor_net/esuprt_poweredge/poweredge-m620_setup%20guide_en-us.pdf
+PowerEdge r630:
+https://dl.dell.com/topicspdf/poweredge-r630_owners-manual_en-us.pdf
+https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_poweredge/poweredge-r630_setup%20guide_en-us.pdf
 
 ```
 
