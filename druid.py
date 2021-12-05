@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.1
+# Version:      0.2.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -122,6 +122,17 @@ except ImportError:
 # Import By module from selenium webdriver
 
 from selenium.webdriver.common.by import By
+
+# Load pygments
+
+try:
+  from pygments import highlight
+except ImportError:
+  install_and_import("pygments")
+  from pygments import highlight
+
+from pygments.formatters.terminal256 import Terminal256Formatter
+from pygments.lexers.web import JsonLexer  
 
 # Print version
 
@@ -371,15 +382,51 @@ def get_idrac_ssh_info(options):
 
 def parse_idrac_ssh_hw_inventory(options):
   inv_file = "%s/%s.hwinv" % (options['workdir'], options['ip'])
+  devices  = []
   if not os.path.exists(inv_file):
     hw_inv = get_idrac_ssh_info(options)
     with open(inv_file, "w") as file:
       file.write(hw_inv)
   hw_inv = file_to_array(inv_file)
-  for line in hw_inv:
+  items  = filter(lambda a: "InstanceID:" in a, hw_inv)
+  items  = len((list(items)))
+  firmware = ""
+  instance = ""
+  device = ""
+  devices.append("{")
+  for index, line in enumerate(hw_inv):
     line = line.rstrip()
-    if options['print'] == True:
-      print(line)
+    if re.search(r"InstanceID:", line):
+      instance = line.split(": ")[-1]
+      instance = re.sub(r"\]", "", instance)
+      string   = "  \"%s\": {" % (instance)
+      devices.append(string)
+      items = items-1
+    else: 
+      if re.search(r"---", line) and not re.search("[A-Z]", line):
+        if items > 0:
+          devices.append("  },")
+        else:
+          devices.append("  }")
+      else:
+        if re.search(r"^[A-Z]", line):
+          (param, value) = line.split(" = ")
+          if re.search(r"---", hw_inv[index+1]):
+            string = "    \"%s\": \"%s\"" % (param, value)
+          else:
+            string = "    \"%s\": \"%s\"," % (param, value)
+          devices.append(string)
+  devices.append("}")
+  devices = "\n".join(devices)
+  json_data = json.loads(devices)
+  if options['print'] == True:
+    json_data = json.dumps(json_data, indent=1)
+    output = highlight(
+      json_data,
+      lexer=JsonLexer(),
+      formatter=Terminal256Formatter(),
+    )
+    print(output)
   return
 
 # Get iDRAC information via Redfish

@@ -40,3 +40,5 @@
 # Updated for changes in selenium module
 # 0.2.1: Sat  4 Dec 2021 12:12:57 AEDT
 # Added initial check and print code
+# 0.2.2: Sun  5 Dec 2021 21:48:45 AEDT
+# Added JSON import code to check
