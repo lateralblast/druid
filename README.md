@@ -42,12 +42,13 @@ Required standard Python modules:
 
 Required additional Python modules:
 
+- paraminko
+- pygments
 - selenium
-- bs4
+- pexpect
 - lxml
 - wget
-- paraminko
-- pexpect
+- bs4
 
 Required Ruby gems:
 
@@ -70,6 +71,46 @@ http://creativecommons.org/licenses/by/4.0/legalcode
 
 Usage
 -----
+
+Python:
+
+```
+./druid.py --help
+usage: druid.py [-h] [--ip IP] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK]
+                [--search SEARCH] [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR] [--platform PLATFORM]
+                [--username USERNAME] [--password PASSWORD] [--all] [--ssh] [--mask] [--force] [--print] [--options] [--version]
+                [--verbose] [--download]
+
+options:
+  -h, --help           show this help message and exit
+  --ip IP
+  --get GET
+  --set SET
+  --type TYPE
+  --model MODEL
+  --fwdir FWDIR
+  --check CHECK
+  --search SEARCH
+  --output OUTPUT
+  --value VALUE
+  --method METHOD
+  --workdir WORKDIR
+  --platform PLATFORM
+  --username USERNAME
+  --password PASSWORD
+  --all
+  --ssh
+  --mask
+  --force
+  --print
+  --options
+  --version
+  --verbose
+  --download
+  ```
+
+
+Ruby:
 
 ```
 ./druid.rb --help
