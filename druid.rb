@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -W:no-deprecated
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.1.4
+# Version:      0.1.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode

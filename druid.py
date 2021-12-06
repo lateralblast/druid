@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.2
+# Version:      0.2.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -257,17 +257,14 @@ def print_document_urls(options):
   handle_output(options, setup_url)
   if options['download'] == True:
     for url in [ owners_url, setup_url ]:
-      file = os.file.basename(url)
+      file = os.path.basename(url)
       file = "%s/%s" % (options['fwdir'], file)
       download_file(options,url, file)
       if re.search(r"owner", file):
         if not os.path.exists(file):
           options['hwtype'] = options['hwupcase'].downcase
           url = "http://topics-cdn.dell.com/pdf/%s-%s_Owner's%%20Manual_en-us.pdf" % (options['hwtype'], options['model'])
-          string  = "Downloading %s to %s" % (url,file)
-          command = "wget %s -O %s" % (url,file)
-          handle_output(options, string)
-          process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, )
+          download_file(options,url, file)
   print()
   return
 
@@ -396,37 +393,41 @@ def parse_idrac_ssh_hw_inventory(options):
   devices.append("{")
   for index, line in enumerate(hw_inv):
     line = line.rstrip()
-    if re.search(r"InstanceID:", line):
-      instance = line.split(": ")[-1]
-      instance = re.sub(r"\]", "", instance)
-      string   = "  \"%s\": {" % (instance)
-      devices.append(string)
-      items = items-1
-    else: 
-      if re.search(r"---", line) and not re.search("[A-Z]", line):
-        if items > 0:
-          devices.append("  },")
-        else:
-          devices.append("  }")
-      else:
-        if re.search(r"^[A-Z]", line):
-          (param, value) = line.split(" = ")
-          if re.search(r"---", hw_inv[index+1]):
-            string = "    \"%s\": \"%s\"" % (param, value)
+    if options['text'] == True and options['print'] == True:
+      print(line)
+    else:
+      if re.search(r"InstanceID:", line):
+        instance = line.split(": ")[-1]
+        instance = re.sub(r"\]", "", instance)
+        string   = "  \"%s\": {" % (instance)
+        devices.append(string)
+        items = items-1
+      else: 
+        if re.search(r"---", line) and not re.search("[A-Z]", line):
+          if items > 0:
+            devices.append("  },")
           else:
-            string = "    \"%s\": \"%s\"," % (param, value)
-          devices.append(string)
-  devices.append("}")
-  devices = "\n".join(devices)
-  json_data = json.loads(devices)
-  if options['print'] == True:
-    json_data = json.dumps(json_data, indent=1)
-    output = highlight(
-      json_data,
-      lexer=JsonLexer(),
-      formatter=Terminal256Formatter(),
-    )
-    print(output)
+            devices.append("  }")
+        else:
+          if re.search(r"^[A-Z]", line):
+            (param, value) = line.split(" = ")
+            if re.search(r"---", hw_inv[index+1]):
+              string = "    \"%s\": \"%s\"" % (param, value)
+            else:
+              string = "    \"%s\": \"%s\"," % (param, value)
+            devices.append(string)
+  if options['json'] == True:
+    devices.append("}")
+    devices = "\n".join(devices)
+    json_data = json.loads(devices)
+    if options['print'] == True:
+      json_data = json.dumps(json_data, indent=1)
+      output = highlight(
+        json_data,
+        lexer=JsonLexer(),
+        formatter=Terminal256Formatter(),
+      )
+      print(output)
   return
 
 # Get iDRAC information via Redfish
@@ -490,8 +491,9 @@ def download_file(options, url, file):
   if options['download'] == True:
     if not os.path.exists(file):
       string  = "Downloading %s to %s" % (url,file)
-      command = "wget %s -O %s" % (url,file)
+      command = "wget %s -O %s -q" % (url,file)
       handle_output(options,string)
+      process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, )
   return
 
 # Initiate SSH Session
@@ -515,7 +517,7 @@ def print_results(options, results):
     if options['download'] == True:
       if not os.path.exists(model_dir):
         os.mkdir(model_dir)
-      file = os.file.basename(url)
+      file = os.path.basename(url)
       file = "%s/%s" % (model_dir, file)
       download_file(options, url, file)
   print()
@@ -547,7 +549,9 @@ parser.add_argument("--username", required=False)        # Set Username
 parser.add_argument("--password", required=False)        # Set Password
 parser.add_argument("--all", action='store_true')        # Return all versions (by default only latest are returned)
 parser.add_argument("--ssh", action='store_true')        # Use SSH for iDRAC
+parser.add_argument("--json", action='store_true')       # Process/output data in JSON
 parser.add_argument("--mask", action='store_true')       # Mask MAC addresses etc
+parser.add_argument("--text", action='store_true')       # Output in text
 parser.add_argument("--force", action='store_true')      # Ignore ping test etc
 parser.add_argument("--print", action='store_true')      # Print out information (e.g. inventory)
 parser.add_argument("--options", action='store_true')    # Display options information

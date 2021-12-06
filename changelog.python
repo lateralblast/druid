@@ -42,3 +42,5 @@
 # Added initial check and print code
 # 0.2.2: Sun  5 Dec 2021 21:48:45 AEDT
 # Added JSON import code to check
+# 0.2.3: Mon  6 Dec 2021 14:20:43 AEDT
+# Fixed download function
