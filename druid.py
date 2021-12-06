@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.3
+# Version:      0.2.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -306,19 +306,30 @@ def get_firmware_info(options,results):
   name   = ""
   link   = ""
   driver = start_web_driver()
-  driver.get(options['modelurl'])
-  time.sleep(5)
-  html_doc = driver.page_source
-  html_doc = BeautifulSoup(html_doc, features='lxml')
   if options['all'] == True:
-    if re.search(r"_evidon-accept-button", str(html_doc)):
-      driver.find_element(By.ID, "_evidon-accept-button").click()
-      driver.find_element(By.ID, "paginationRow").click()
-    else:
-      driver.find_element(By.ID, "paginationRow").click()
+    html_file = "%s/%s_all.html" % (options['workdir'], options['model'])
+  else:
+    html_file = "%s/%s_latest.html" % (options['workdir'], options['model'])
+  if os.path.exists(html_file) or options['update'] == False:
+    with open(html_file) as file:
+      html_doc = file.read()
+  else:
+    driver.get(options['modelurl'])
     time.sleep(5)
     html_doc = driver.page_source
-    html_doc = BeautifulSoup(html_doc, features='lxml')
+    if options['all'] == True:
+      if re.search(r"_evidon-accept-button", str(html_doc)):
+        driver.find_element(By.ID, "_evidon-accept-button").click()
+        driver.find_element(By.ID, "paginationRow").click()
+      else:
+        driver.find_element(By.ID, "paginationRow").click()
+      time.sleep(5)
+      html_doc = driver.page_source
+    with open(html_file, "w") as file:
+      file.write(html_doc)
+    with open(html_file) as file:
+      html_doc = file.read()
+  html_doc = BeautifulSoup(html_doc, features='lxml')
   for section in html_doc.select("section"):
     for table in section.select("table"):
       for row in table.select("tr"):
