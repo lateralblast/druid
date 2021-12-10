@@ -386,9 +386,9 @@ def get_idrac_ssh_info(options):
   output = output.decode()
   return output
 
-# Parse iDRAC hardware inventory via SSH
+# Get iDRAC hardware inventory via SSH
 
-def parse_idrac_ssh_hw_inventory(options):
+def get_idrac_ssh_hw_inventory(options):
   d_json = []
   d_text = []
   inv_file  = "%s/%s_hwinv.text" % (options['workdir'], options['ip'])
@@ -438,26 +438,26 @@ def parse_idrac_ssh_hw_inventory(options):
     if os.path.exists(json_file) or options['update'] == True:
       with open(json_file, "w") as file:
         file.write(d_json)
-  if options['print'] == True:  
-    if options['text'] == True:
-      text = file_to_array(inv_file)
-      for line in text:
-        line = line.rstrip()
+  if options['text'] == True:
+    output = file_to_array(inv_file)
+    for line in output:
+      line = line.rstrip()
+      if options['print'] == True:  
         print(line)
-    if options['json'] == True:
-      print("got here")
-      open_file = open(json_file, "r")
-      json_data = open_file.read()
-      json_data = json.loads(json_data)
-      json_data = json.dumps(json_data, indent=1)
-      output = highlight(
-        json_data,
-        lexer=JsonLexer(),
-        formatter=Terminal256Formatter(),
-      )
+  if options['json'] == True:
+    open_file = open(json_file, "r")
+    json_data = open_file.read()
+    json_data = json.loads(json_data)
+    json_data = json.dumps(json_data, indent=1)
+    output = highlight(
+      json_data,
+      lexer=JsonLexer(),
+      formatter=Terminal256Formatter(),
+    )
+    if options['print'] == True:  
       print(output)
       open_file.close()
-  return
+  return(output)
 
 # Get iDRAC information via Redfish
 
@@ -675,10 +675,13 @@ if options['ip']:
       parse_idrac_ssh_hw_inventory(options)
   else:
     if options['get']:
-      if options['ssh'] == True:
-        get_idrac_redfish_info(options)
+      if re.search(r"inventory", options['get']):
+        get_idrac_ssh_hw_inventory(options)
       else:
-        get_idrac_ssh_info(options)
+        if options['ssh'] == True:
+          get_idrac_redfish_info(options)
+        else:
+          get_idrac_ssh_info(options)
     if options['set']:
       if options['ssh'] == True:
         set_idrac_redfish_info(options)

@@ -673,5 +673,127 @@ http://downloads.dell.com/FOLDER00220570M/1/Dell_OMC_for_CA_NSM_v3.4_A00.exe
 
 Matrox Video Driver (Dell Version)
 http://downloads.dell.com/FOLDER00247465M/1/A00_WIN64_G200eR_v2.4.1.0.exe
+```
 
+Get iDRAC hardware inventory in text format:
+
+```
+./druid.py --get inventory --ip 192.168.11.233 --username root --password m00fm00f --text --print
+racadm hwinventory
+
+
+-------------------------HARDWARE INVENTORY------------------------
+
+[InstanceID: QuickSync.Integrated.1]
+Device Type = SystemQuickSync
+FWVersion = 0.0
+Version = 0
+ProductName = iDRAC Quick Sync
+Manufacturer = Dell
+DeviceDescription = Integrated Quick Sync 1
+FQDD = QuickSync.Integrated.1
+InstanceID = QuickSync.Integrated.1
+-------------------------------------------------------------------
+
+[InstanceID: RAID.Integrated.1-1]
+Device Type = Controller
+BootVirtualDiskFQDD = Disk.Virtual.0:RAID.Integrated.1-1
+RealtimeCapability = Incapable
+SupportControllerBootMode = Supported
+SupportEnhancedAutoForeignImport = Supported
+MaxAvailablePCILinkSpeed = Generation 3
+MaxPossiblePCILinkSpeed = Generation 3
+PatrolReadState = Unknown
+DriverVersion = Not Applicable
+CacheSizeInMB = 2048 MB
+SupportRAID10UnevenSpans = Supported
+T10PICapability = Supported
+SlicedVDCapability = Sliced Virtual Disk creation supported
+CachecadeCapability = Cachecade Virtual Disk not supported
+EncryptionCapability = Local Key Management Capable
+EncryptionMode = None
+SecurityStatus = Encryption Capable
+SASAddress = 51866DA0B6C3F400
+ProductName = PERC H730P Mini
+DeviceCardSlotType = Unknown
+DeviceCardSlotLength = Unknown
+DeviceCardDataBusWidth = Unknown
+DeviceCardManufacturer = DELL
+PCISubDeviceID = 1F47
+PCIDeviceID = 5D
+PCISubVendorID = 1028
+PCIVendorID = 1000
+Function = 0
+Device = 0
+Bus = 0
+ControllerFirmwareVersion = 25.5.8.0001
+PersistentHotspare = 0
+PCISlot = 0
+RollupStatus = Unknown
+PrimaryStatus = Unknown
+DeviceDescription = Integrated RAID Controller 1
+FQDD = RAID.Integrated.1-1
+InstanceID = RAID.Integrated.1-1
+LastUpdateTime = 2021-11-26T13:30:50
+LastSystemInventoryTime = 2021-11-26T13:31:09
+-------------------------------------------------------------------
+```
+
+Get iDRAC hardware inventory in JSON format:
+
+```
+./druid.py --get inventory --ip 192.168.11.233 --username root --password m00fm00f --json --print
+
+{
+ "QuickSync.Integrated.1": {
+  "Device Type": "SystemQuickSync",
+  "FWVersion": "0.0",
+  "Version": "0",
+  "ProductName": "iDRAC Quick Sync",
+  "Manufacturer": "Dell",
+  "DeviceDescription": "Integrated Quick Sync 1",
+  "FQDD": "QuickSync.Integrated.1",
+  "InstanceID": "QuickSync.Integrated.1"
+ },
+ "RAID.Integrated.1-1": {
+  "Device Type": "PCIDevice",
+  "SlotType": "Unknown",
+  "SlotLength": "Unknown",
+  "DataBusWidth": "Unknown",
+  "Description": "PERC H730P Mini",
+  "Manufacturer": "Broadcom / LSI",
+  "PCISubDeviceID": "1F47",
+  "PCISubVendorID": "1028",
+  "PCIDeviceID": "005D",
+  "PCIVendorID": "1000",
+  "FunctionNumber": "0",
+  "DeviceNumber": "0",
+  "BusNumber": "0",
+  "DeviceDescription": "Integrated RAID Controller 1",
+  "FQDD": "RAID.Integrated.1-1",
+  "InstanceID": "RAID.Integrated.1-1",
+  "LastUpdateTime": "2021-11-26T13:30:50",
+  "LastSystemInventoryTime": "2021-11-26T13:31:09"
+ },
+ "AHCI.Embedded.1-1": {
+  "Device Type": "PCIDevice",
+  "SlotType": "Unknown",
+  "SlotLength": "Unknown",
+  "DataBusWidth": "Unknown",
+  "Description": "C610/X99 series chipset sSATA Controller [AHCI mode]",
+  "Manufacturer": "Intel Corporation",
+  "PCISubDeviceID": "0601",
+  "PCISubVendorID": "1028",
+  "PCIDeviceID": "8D62",
+  "PCIVendorID": "8086",
+  "FunctionNumber": "4",
+  "DeviceNumber": "23",
+  "BusNumber": "0",
+  "DeviceDescription": "Embedded AHCI 1",
+  "FQDD": "AHCI.Embedded.1-1",
+  "InstanceID": "AHCI.Embedded.1-1",
+  "LastUpdateTime": "2021-10-21T14:23:42",
+  "LastSystemInventoryTime": "2021-11-26T13:31:09"
+ }
+}
 ```
