@@ -46,3 +46,5 @@
 # Fixed download function
 # 0.2.4: Mon  6 Dec 2021 17:21:51 AEDT
 # Added code to save a cached copy html files
+# 0.2.5: Fri 10 Dec 2021 17:03:03 AEDT
+# Improved JSON and text output for iDRAC Hardware Inventory

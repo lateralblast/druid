@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.4
+# Version:      0.2.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -389,49 +389,66 @@ def get_idrac_ssh_info(options):
 # Parse iDRAC hardware inventory via SSH
 
 def parse_idrac_ssh_hw_inventory(options):
-  inv_file = "%s/%s.hwinv" % (options['workdir'], options['ip'])
-  devices  = []
-  if not os.path.exists(inv_file):
+  d_json = []
+  d_text = []
+  inv_file  = "%s/%s_hwinv.text" % (options['workdir'], options['ip'])
+  json_file = "%s/%s_hwinv.json" % (options['workdir'], options['ip'])
+  if not os.path.exists(inv_file) or not os.path.exists(json_file) or options['update'] == True:
     hw_inv = get_idrac_ssh_info(options)
     with open(inv_file, "w") as file:
       file.write(hw_inv)
-  hw_inv = file_to_array(inv_file)
-  items  = filter(lambda a: "InstanceID:" in a, hw_inv)
-  items  = len((list(items)))
-  firmware = ""
-  instance = ""
-  device = ""
-  devices.append("{")
-  for index, line in enumerate(hw_inv):
-    line = line.rstrip()
-    if options['text'] == True and options['print'] == True:
-      print(line)
-    else:
-      if re.search(r"InstanceID:", line):
-        instance = line.split(": ")[-1]
-        instance = re.sub(r"\]", "", instance)
-        string   = "  \"%s\": {" % (instance)
-        devices.append(string)
-        items = items-1
-      else: 
-        if re.search(r"---", line) and not re.search("[A-Z]", line):
-          if items > 0:
-            devices.append("  },")
-          else:
-            devices.append("  }")
-        else:
-          if re.search(r"^[A-Z]", line):
-            (param, value) = line.split(" = ")
-            if re.search(r"---", hw_inv[index+1]):
-              string = "    \"%s\": \"%s\"" % (param, value)
+    hw_inv = file_to_array(inv_file)
+    items  = filter(lambda a: "InstanceID:" in a, hw_inv)
+    items  = len((list(items)))
+    firmware = ""
+    instance = ""
+    device = ""
+    d_json.append("{")
+    for index, line in enumerate(hw_inv):
+      line = line.rstrip()
+      if options['text'] == True and options['print'] == True:
+        d_text.append(line)
+      else:
+        if re.search(r"InstanceID:", line):
+          instance = line.split(": ")[-1]
+          instance = re.sub(r"\]", "", instance)
+          string   = "  \"%s\": {" % (instance)
+          d_json.append(string)
+          items = items-1
+        else: 
+          if re.search(r"---", line) and not re.search("[A-Z]", line):
+            if items > 0:
+              d_json.append("  },")
             else:
-              string = "    \"%s\": \"%s\"," % (param, value)
-            devices.append(string)
-  if options['json'] == True:
-    devices.append("}")
-    devices = "\n".join(devices)
-    json_data = json.loads(devices)
-    if options['print'] == True:
+              d_json.append("  }")
+          else:
+            if re.search(r"^[A-Z]", line):
+              (param, value) = line.split(" = ")
+              if re.search(r"---", hw_inv[index+1]):
+                string = "    \"%s\": \"%s\"" % (param, value)
+              else:
+                string = "    \"%s\": \"%s\"," % (param, value)
+              d_json.append(string)
+    d_json.append("}")
+    d_json = "\n".join(d_json)
+    d_text = "\n".join(d_text)
+    if os.path.exists(inv_file) or options['update'] == True:
+      with open(inv_file, "w") as file:
+        file.write(d_text)
+    if os.path.exists(json_file) or options['update'] == True:
+      with open(json_file, "w") as file:
+        file.write(d_json)
+  if options['print'] == True:  
+    if options['text'] == True:
+      text = file_to_array(inv_file)
+      for line in text:
+        line = line.rstrip()
+        print(line)
+    if options['json'] == True:
+      print("got here")
+      open_file = open(json_file, "r")
+      json_data = open_file.read()
+      json_data = json.loads(json_data)
       json_data = json.dumps(json_data, indent=1)
       output = highlight(
         json_data,
@@ -439,6 +456,7 @@ def parse_idrac_ssh_hw_inventory(options):
         formatter=Terminal256Formatter(),
       )
       print(output)
+      open_file.close()
   return
 
 # Get iDRAC information via Redfish
@@ -521,17 +539,37 @@ def start_ssh_session(options):
 
 def print_results(options, results):
   model_dir = "%s/%s" % (options['fwdir'], options['model'])
+  if options['json'] == True:
+    print("{")
   for name,url in results.items(): 
-    print()
-    print(name)
-    print(url)
+    if options['json'] == True:
+      last = name.split(" ")[-1]
+      if re.search(r"[0-9]\.[0-9]", name):
+        if re.search(r"ersion", name):
+          version = name.split("ersion ")[-1]
+        else:
+          if re.search(r"v[0-9]", name):
+            if re.search(r" v[0-9]", name):
+              version = name.split(" v")[-1]
+            if re.search(r"\,v[0-9]", name):
+              version = name.split(",v")[-1]
+          else:
+            version = ""
+      string = "  '%s': {" 
+    else:
+      print()
+      print(name)
+      print(url)
     if options['download'] == True:
       if not os.path.exists(model_dir):
         os.mkdir(model_dir)
       file = os.path.basename(url)
       file = "%s/%s" % (model_dir, file)
       download_file(options, url, file)
-  print()
+  if options['json'] == True:
+    print("}")
+  else:
+    print()
   return
 
 # If we have no command line arguments print help
@@ -562,9 +600,11 @@ parser.add_argument("--all", action='store_true')        # Return all versions (
 parser.add_argument("--ssh", action='store_true')        # Use SSH for iDRAC
 parser.add_argument("--json", action='store_true')       # Process/output data in JSON
 parser.add_argument("--mask", action='store_true')       # Mask MAC addresses etc
+parser.add_argument("--ping", action='store_true')       # Ping test host as part of getting iDRAC/Redfish data
 parser.add_argument("--text", action='store_true')       # Output in text
 parser.add_argument("--force", action='store_true')      # Ignore ping test etc
 parser.add_argument("--print", action='store_true')      # Print out information (e.g. inventory)
+parser.add_argument("--update", action='store_true')     # If file exists update it with latest data
 parser.add_argument("--options", action='store_true')    # Display options information
 parser.add_argument("--version", action='store_true')    # Display version information
 parser.add_argument("--verbose", action='store_true')    # Verbose flag
@@ -624,7 +664,7 @@ if not options['password']:
 # Handle ip switch
 
 if options['ip']:
-  if not options['force'] == True:
+  if options['ping'] == True:
     check_ping = check_ping(options['ip'])
     if check_ping == False:
       string = "Host %s not responding" % (options['ip'])
@@ -702,7 +742,6 @@ if options['model']:
       else:
         if options['verbose'] == True:
           string = "URL: %s" % (options['modelurl'])
-          print("got here")
         results = get_firmware_info(options, results)
         print_results(options, results)
   else:
