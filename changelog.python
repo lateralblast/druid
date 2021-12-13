@@ -48,3 +48,5 @@
 # Added code to save a cached copy html files
 # 0.2.5: Fri 10 Dec 2021 17:03:03 AEDT
 # Improved JSON and text output for iDRAC Hardware Inventory
+# 0.2.6: Mon 13 Dec 2021 22:19:49 AEDT
+# Added requests module install code

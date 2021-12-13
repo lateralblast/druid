@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.5
+# Version:      0.2.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -20,7 +20,6 @@ import urllib.request
 import subprocess
 import platform
 import argparse
-import requests
 import urllib3
 import time
 import json
@@ -60,6 +59,14 @@ def install_and_import(package):
     os.system(command)
   finally:
     globals()[package] = importlib.import_module(package)
+
+# Load requests
+
+try:
+  import requests
+except ImportError:
+  install_and_import("requests")
+  import requests
 
 # Load selenium
 
@@ -539,23 +546,45 @@ def start_ssh_session(options):
 
 def print_results(options, results):
   model_dir = "%s/%s" % (options['fwdir'], options['model'])
+  total_res = len(results)
   if options['json'] == True:
     print("{")
-  for name,url in results.items(): 
+  counter = 0
+  for name, url in results.items(): 
+    counter = counter+1
+    version = ""
+    descs = []
+    desc  = ""
     if options['json'] == True:
-      last = name.split(" ")[-1]
-      if re.search(r"[0-9]\.[0-9]", name):
-        if re.search(r"ersion", name):
-          version = name.split("ersion ")[-1]
+      fields = name.split(" ")
+      for field in fields:
+        if re.search(r"[0-9]\.[0-9]|^[v,V][0-9]|^[v|V]\.[0-9]", field):
+          version = field
         else:
-          if re.search(r"v[0-9]", name):
-            if re.search(r" v[0-9]", name):
-              version = name.split(" v")[-1]
-            if re.search(r"\,v[0-9]", name):
-              version = name.split(",v")[-1]
-          else:
-            version = ""
-      string = "  '%s': {" 
+          if not re.search(r"ersion", field):
+            descs.append(field)
+      if not re.search(r"[0-9]", version):
+        fields = url.split("_")
+        for field in fields:
+          if re.search(r"[0-9]\.[0-9]", field):
+            version = field
+      if re.search(r"\,", version):
+        version = version.split(",")[-1]
+      version = re.sub(r"^[v|V]", "", version)
+      version = re.sub(r"[A-Z,a-z]", "", version)
+      version = re.sub(r"^\.|\.$", "", version)
+      desc = " ".join(descs)
+      desc = re.sub("\,$|\.$", "", desc)
+      string = "  '%s': {" % (desc)
+      print(string)
+      string = "    'version': '%s'," % (version)
+      print(string)
+      string = "    'url': '%s'" % (url)
+      print(string)
+      if counter < total_res:
+        print("  },")
+      else:
+        print("  }")
     else:
       print()
       print(name)
