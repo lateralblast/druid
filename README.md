@@ -678,7 +678,7 @@ http://downloads.dell.com/FOLDER00247465M/1/A00_WIN64_G200eR_v2.4.1.0.exe
 Get iDRAC hardware inventory in text format:
 
 ```
-./druid.py --get inventory --ip 192.168.11.233 --username root --password m00fm00f --text --print
+./druid.py --get inventory --ip 192.168.11.233 --username root --password calvin --text --print
 racadm hwinventory
 
 
@@ -742,7 +742,7 @@ LastSystemInventoryTime = 2021-11-26T13:31:09
 Get iDRAC hardware inventory in JSON format:
 
 ```
-./druid.py --get inventory --ip 192.168.11.233 --username root --password m00fm00f --json --print
+./druid.py --get inventory --ip 192.168.11.233 --username root --password calvin --json --print
 
 {
  "QuickSync.Integrated.1": {
