@@ -50,3 +50,7 @@
 # Improved JSON and text output for iDRAC Hardware Inventory
 # 0.2.6: Mon 13 Dec 2021 22:19:49 AEDT
 # Added requests module install code
+# 0.2.7: Fri 16 Jun 2023 23:41:25 AEST
+# Bug fixes
+# 0.2.8: Thu 22 Jun 2023 13:16:06 AEST
+# Added initial support for getting ServiceTag information

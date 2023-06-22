@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.6
+# Version:      0.2.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -75,6 +75,22 @@ try:
 except ImportError:
   install_and_import("selenium")
   from selenium import webdriver
+
+# Load  fake_useragent
+
+try:
+  from fake_useragent import UserAgent
+except ImportError:
+  install_and_import("fake-useragent")
+  from fake_useragent import UserAgent
+
+# Load selenium-stealth
+
+try:
+  from selenium_stealth import stealth
+except ImportError:
+  install_and_import("selenium-stealth")
+  from selenium_stealth import stealth
 
 # Load bs4
 
@@ -278,10 +294,17 @@ def print_document_urls(options):
 # Initiate web client
 
 def start_web_driver():
-  from selenium.webdriver.firefox.options import Options
+  from selenium import webdriver
+  from selenium.webdriver.chrome.options import Options
   options = Options()
-  options.headless = True
-  driver = webdriver.Firefox(options=options)
+  options.add_experimental_option("excludeSwitches", ["enable-automation"])
+  options.add_experimental_option('useAutomationExtension', False)
+  options.add_argument('--disable-blink-features=AutomationControlled')
+  options.add_argument("--disable-extensions")
+  options.add_argument("--headless")
+  driver = webdriver.Chrome(options = options)
+  driver.execute_cdp_cmd('Network.setUserAgentOverride', {"userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.53 Safari/537.36'})
+  driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
   return driver
 
 # Get list of models
@@ -307,9 +330,36 @@ def get_model_list(options):
       models.append(model)
   return models
 
+# Get Service Tag info from website
+
+def get_servicetag_info(options, results):
+  name   = ""
+  info   = ""
+  driver = start_web_driver()
+  html_file = "%s/%s.html" % (options['workdir'], options['servicetag'])
+  if os.path.exists(html_file) and options['update'] == False:
+    with open(html_file) as file:
+      html_doc = file.read()
+  else:
+    driver.get(options['servicetagurl'])
+    time.sleep(30)
+    html_doc = driver.page_source
+    with open(html_file, "w") as file:
+      file.write(html_doc)
+    with open(html_file) as file:
+      html_doc = file.read()
+  html_doc = BeautifulSoup(html_doc, features='lxml')
+  for section in html_doc.select('p'):
+    if re.search("warrantyExpiringLabel mb-0 ml-1 mr-1", str(section)):
+      name = "Warranty"
+      info = str(section).split("\n")[0].split(">")[1].split("<")[0]
+      results[name] = info
+  return results
+
+
 # Get Firmware info from website
 
-def get_firmware_info(options,results):
+def get_firmware_info(options, results):
   name   = ""
   link   = ""
   driver = start_web_driver()
@@ -317,7 +367,7 @@ def get_firmware_info(options,results):
     html_file = "%s/%s_all.html" % (options['workdir'], options['model'])
   else:
     html_file = "%s/%s_latest.html" % (options['workdir'], options['model'])
-  if os.path.exists(html_file) or options['update'] == False:
+  if os.path.exists(html_file) and options['update'] == False:
     with open(html_file) as file:
       html_doc = file.read()
   else:
@@ -625,6 +675,7 @@ parser.add_argument("--workdir", required=False)         # Work directory
 parser.add_argument("--platform", required=False)        # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
 parser.add_argument("--username", required=False)        # Set Username
 parser.add_argument("--password", required=False)        # Set Password
+parser.add_argument("--servicetag", required=False)      # Service Tag
 parser.add_argument("--all", action='store_true')        # Return all versions (by default only latest are returned)
 parser.add_argument("--ssh", action='store_true')        # Use SSH for iDRAC
 parser.add_argument("--json", action='store_true')       # Process/output data in JSON
@@ -754,6 +805,20 @@ if re.search(r"manual|pdf",options['type']):
   else:
     print_document_urls(options)
   exit()
+
+# Handle service tag switch
+
+if options['servicetag']:
+  service_tags = []
+  if re.search(",", options['servicetag']):
+    service_tags = options['servicetag'].split(",")
+  else:
+    service_tags.append(options['servicetag'])
+  for service_tag in service_tags:
+    options['servicetag'] = service_tag
+    options['servicetagurl'] = "https://www.dell.com/support/home/en-au/product-support/servicetag/%s/overview" % (options['servicetag'])
+    results = get_servicetag_info(options, results)
+    print_results(options, results)
 
 # Handle model switch
 

@@ -5,6 +5,8 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
+Version: 0.2.8
+
 A ruby script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
 
@@ -42,6 +44,8 @@ Required standard Python modules:
 
 Required additional Python modules:
 
+- selenium_stealth
+- fake_useragent
 - paraminko
 - pygments
 - selenium
@@ -77,12 +81,13 @@ Python:
 ```
 ./druid.py --help
 usage: druid.py [-h] [--ip IP] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK]
-                [--search SEARCH] [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR] [--platform PLATFORM]
-                [--username USERNAME] [--password PASSWORD] [--all] [--ssh] [--mask] [--force] [--print] [--options] [--version]
-                [--verbose] [--download]
+                [--search SEARCH] [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR]
+                [--platform PLATFORM] [--username USERNAME] [--password PASSWORD] [--servicetag SERVICETAG] [--all] [--ssh]
+                [--json] [--mask] [--ping] [--text] [--force] [--print] [--update] [--options] [--version] [--verbose]
+                [--download]
 
 options:
-  -h, --help           show this help message and exit
+  -h, --help            show this help message and exit
   --ip IP
   --get GET
   --set SET
@@ -98,11 +103,16 @@ options:
   --platform PLATFORM
   --username USERNAME
   --password PASSWORD
+  --servicetag SERVICETAG
   --all
   --ssh
+  --json
   --mask
+  --ping
+  --text
   --force
   --print
+  --update
   --options
   --version
   --verbose
@@ -131,6 +141,15 @@ Usage:
 
 Examples
 --------
+
+Get ServiceTag information:
+
+```
+./druid.py --servicetag XXXXXX
+
+Warranty
+Expires  28 OCT. 2027
+```
 
 Get the available M630 BIOS firmware:
 
