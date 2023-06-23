@@ -5,7 +5,7 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.2.8
+Version: 0.2.9
 
 A ruby script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
@@ -149,6 +149,12 @@ Get ServiceTag information:
 
 Warranty
 Expires  28 OCT. 2027
+```
+
+Get ServiceTag config (creates a CSV file in the current directory with the service tag, e.g. XXXXXX.csv):
+
+```
+./druid.py --servicetag XXXXXX --get config
 ```
 
 Get the available M630 BIOS firmware:

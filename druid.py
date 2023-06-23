@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.8
+# Version:      0.2.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -337,23 +337,43 @@ def get_servicetag_info(options, results):
   info   = ""
   driver = start_web_driver()
   html_file = "%s/%s.html" % (options['workdir'], options['servicetag'])
-  if os.path.exists(html_file) and options['update'] == False:
-    with open(html_file) as file:
-      html_doc = file.read()
+  conf_file = "%s/%s_config.html" % (options['workdir'], options['servicetag'])
+  csv_file  = "%s/%s_config.csv" % (options['workdir'], options['servicetag'])
+  if options['get'] == "config":
+    if not os.path.exists(csv_file) or options['update']:
+      driver.get(options['servicetagurl'])
+      time.sleep(30)
+      html_doc = driver.page_source
+      with open(html_file, "w") as file:
+        file.write(html_doc)
+      html_doc = BeautifulSoup(html_doc, features='lxml')
+      driver.find_element(By.ID, "quicklink-sysconfig").click()
+      time.sleep(5)
+      html_doc  = driver.page_source
+      with open(conf_file, "w") as file:
+        file.write(html_doc)
+      driver.find_element(By.ID, "current-config-export").click()
+    else:
+      with open(conf_file) as file:
+        html_doc = file.read()
   else:
-    driver.get(options['servicetagurl'])
-    time.sleep(30)
-    html_doc = driver.page_source
-    with open(html_file, "w") as file:
-      file.write(html_doc)
-    with open(html_file) as file:
-      html_doc = file.read()
-  html_doc = BeautifulSoup(html_doc, features='lxml')
-  for section in html_doc.select('p'):
-    if re.search("warrantyExpiringLabel mb-0 ml-1 mr-1", str(section)):
-      name = "Warranty"
-      info = str(section).split("\n")[0].split(">")[1].split("<")[0]
-      results[name] = info
+    if os.path.exists(html_file) and options['update']:
+      with open(html_file) as file:
+        html_doc = file.read()
+    else:
+      driver.get(options['servicetagurl'])
+      time.sleep(30)
+      html_doc = driver.page_source
+      with open(html_file, "w") as file:
+        file.write(html_doc)
+      with open(html_file) as file:
+        html_doc = file.read()
+    html_doc = BeautifulSoup(html_doc, features='lxml')
+    for section in html_doc.select('p'):
+      if re.search("warrantyExpiringLabel mb-0 ml-1 mr-1", str(section)):
+        name = "Warranty"
+        info = str(section).split("\n")[0].split(">")[1].split("<")[0]
+        results[name] = info
   return results
 
 
@@ -809,6 +829,8 @@ if re.search(r"manual|pdf",options['type']):
 # Handle service tag switch
 
 if options['servicetag']:
+  if not options['get']:
+    options['get'] = "warranty"
   service_tags = []
   if re.search(",", options['servicetag']):
     service_tags = options['servicetag'].split(",")
@@ -816,7 +838,7 @@ if options['servicetag']:
     service_tags.append(options['servicetag'])
   for service_tag in service_tags:
     options['servicetag'] = service_tag
-    options['servicetagurl'] = "https://www.dell.com/support/home/en-au/product-support/servicetag/%s/overview" % (options['servicetag'])
+    options['servicetagurl'] = "https://www.dell.com/support/home/en-au/product-support/servicetag/%s/overview#" % (options['servicetag'])
     results = get_servicetag_info(options, results)
     print_results(options, results)
 
