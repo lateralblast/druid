@@ -31,6 +31,17 @@ therefore I am depricating the Ruby script and moving to Python.
 Requirements
 ------------
 
+Required applications:
+
+- chromedriver
+
+On Mac OS, you may need to disable quarantine on the executable. e.g.:
+
+```
+brew install --cask chromedriver
+xattr -d com.apple.quarantine /opt/homebrew/bin/chromedriver
+```
+
 Required standard Python modules:
 
 - urllib.request
