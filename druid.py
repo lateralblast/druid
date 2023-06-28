@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.2.9
+# Version:      0.3.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -296,13 +296,14 @@ def print_document_urls(options):
 def start_web_driver():
   from selenium import webdriver
   from selenium.webdriver.chrome.options import Options
-  options = Options()
-  options.add_experimental_option("excludeSwitches", ["enable-automation"])
-  options.add_experimental_option('useAutomationExtension', False)
-  options.add_argument('--disable-blink-features=AutomationControlled')
-  options.add_argument("--disable-extensions")
-  options.add_argument("--headless")
-  driver = webdriver.Chrome(options = options)
+  browser_options = Options()
+  browser_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+  browser_options.add_experimental_option('useAutomationExtension', False)
+  browser_options.add_argument('--disable-blink-features=AutomationControlled')
+  browser_options.add_argument("--disable-extensions")
+  if options['headless'] == True:
+    browser_options.add_argument("--headless")
+  driver = webdriver.Chrome(options = browser_options)
   driver.execute_cdp_cmd('Network.setUserAgentOverride', {"userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.53 Safari/537.36'})
   driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
   return driver
@@ -402,37 +403,49 @@ def get_firmware_info(options, results):
         driver.find_element(By.ID, "paginationRow").click()
       time.sleep(5)
       html_doc = driver.page_source
-    with open(html_file, "w") as file:
-      file.write(html_doc)
-    with open(html_file) as file:
-      html_doc = file.read()
+    driver.find_element(By.NAME, "btnDriverListToggle").click()
+#    with open(html_file, "w") as file:
+#      file.write(html_doc)
+#    with open(html_file) as file:
+#      html_doc = file.read()
+    html_doc = driver.page_source
   html_doc = BeautifulSoup(html_doc, features='lxml')
   for section in html_doc.select("section"):
     for table in section.select("table"):
       for row in table.select("tr"):
-        if re.search(r"tableRow_", str(row)):
-          for column in row.select("td"):
-            if re.search(r"href",str(column)):
-              if re.search(r"download", str(column)):
-                link = str(column)
-                link = link.split('href="')[1]
-                link = link.split('  class="')[0]
-                link = link.split('"')[0]
-            else:
-              if re.search(r"dl-desk-view", str(column)):
-                name = str(column)
-                name = name.split('dl-desk-view">')[1]
-                name = name.split('<span')[0]
-                name = re.sub(r"^\s+|\s+$", "", name)
-                name = re.sub(r"\.$", "", name)
+        if re.search("View full driver details", str(row)):
+          for p in row.select("p"):
+            if re.search("View full driver details", str(p)):
+              line = str(p)
+              href = line.split('href="')[1]
+              href = href.split('"')[0]
+              driver.get(href)
+              d_doc = driver.page_source
+              d_doc = BeautifulSoup(d_doc, features='lxml')
+#              for d_p in d_doc.select("p"): 
+        else:
+          if re.search(r"tableRow_", str(row)):
+            for column in row.select("td"):
+              if re.search(r"href",str(column)):
+                if re.search(r"download", str(column)):
+                  link = str(column)
+                  link = link.split('href="')[1]
+                  link = link.split('  class="')[0]
+                  link = link.split('"')[0]
               else:
-                if re.search(r"aria-label", str(column)):
+                if re.search(r"dl-desk-view", str(column)):
                   name = str(column)
-                  name = name.split('aria-label="')[1]
-                  name = name.split('" class=')[0]
-                  name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
+                  name = name.split('dl-desk-view">')[1]
+                  name = name.split('<span')[0]
+                  name = re.sub(r"^\s+|\s+$", "", name)
                   name = re.sub(r"\.$", "", name)
-#                if not name.find(column.text):
+                else:
+                  if re.search(r"aria-label", str(column)):
+                    name = str(column)
+                    name = name.split('aria-label="')[1]
+                    name = name.split('" class=')[0]
+                    name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
+                    name = re.sub(r"\.$", "", name)
 #                  name = "%s, %s" % (name,column.text)
           if re.search(r"[a-z,A-Z]", name):
             name = re.sub(r"\s+", " ", name)
@@ -680,35 +693,36 @@ if sys.argv[-1] == sys.argv[0]:
 # Get command line arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--ip", required=False)              # Specify IP of iDRAC
-parser.add_argument("--get", required=False)             # Get Parameter
-parser.add_argument("--set", required=False)             # Set Parameter
-parser.add_argument("--type", required=False)            # Type e.g. BIOS (defaults to listing all)
-parser.add_argument("--model", required=False)           # Model e.g. M610, R720, etc
-parser.add_argument("--fwdir", required=False)           # Set a directory to download to
-parser.add_argument("--check", required=False)           # Check installed against available (e.g. inventory)
-parser.add_argument("--search", required=False)          # Search for a term
-parser.add_argument("--output", required=False)          # Output type, e.g. Text, HTML (defaults to Text)
-parser.add_argument("--value", required=False)           # Used with set, to set a value, e.g. On for Power
-parser.add_argument("--method", required=False)          # Method to get iDRAC information (e.g. SSH or Redfish)
-parser.add_argument("--workdir", required=False)         # Work directory
-parser.add_argument("--platform", required=False)        # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
-parser.add_argument("--username", required=False)        # Set Username
-parser.add_argument("--password", required=False)        # Set Password
-parser.add_argument("--servicetag", required=False)      # Service Tag
-parser.add_argument("--all", action='store_true')        # Return all versions (by default only latest are returned)
-parser.add_argument("--ssh", action='store_true')        # Use SSH for iDRAC
-parser.add_argument("--json", action='store_true')       # Process/output data in JSON
-parser.add_argument("--mask", action='store_true')       # Mask MAC addresses etc
-parser.add_argument("--ping", action='store_true')       # Ping test host as part of getting iDRAC/Redfish data
-parser.add_argument("--text", action='store_true')       # Output in text
-parser.add_argument("--force", action='store_true')      # Ignore ping test etc
-parser.add_argument("--print", action='store_true')      # Print out information (e.g. inventory)
-parser.add_argument("--update", action='store_true')     # If file exists update it with latest data
-parser.add_argument("--options", action='store_true')    # Display options information
-parser.add_argument("--version", action='store_true')    # Display version information
-parser.add_argument("--verbose", action='store_true')    # Verbose flag
-parser.add_argument("--download", action='store_true')   # Download file
+parser.add_argument("--ip", required=False)               # Specify IP of iDRAC
+parser.add_argument("--get", required=False)              # Get Parameter
+parser.add_argument("--set", required=False)              # Set Parameter
+parser.add_argument("--type", required=False)             # Type e.g. BIOS (defaults to listing all)
+parser.add_argument("--model", required=False)            # Model e.g. M610, R720, etc
+parser.add_argument("--fwdir", required=False)            # Set a directory to download to
+parser.add_argument("--check", required=False)            # Check installed against available (e.g. inventory)
+parser.add_argument("--search", required=False)           # Search for a term
+parser.add_argument("--output", required=False)           # Output type, e.g. Text, HTML (defaults to Text)
+parser.add_argument("--value", required=False)            # Used with set, to set a value, e.g. On for Power
+parser.add_argument("--method", required=False)           # Method to get iDRAC information (e.g. SSH or Redfish)
+parser.add_argument("--workdir", required=False)          # Work directory
+parser.add_argument("--platform", required=False)         # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
+parser.add_argument("--username", required=False)         # Set Username
+parser.add_argument("--password", required=False)         # Set Password
+parser.add_argument("--servicetag", required=False)       # Service Tag
+parser.add_argument("--all", action='store_true')         # Return all versions (by default only latest are returned)
+parser.add_argument("--ssh", action='store_true')         # Use SSH for iDRAC
+parser.add_argument("--json", action='store_true')        # Process/output data in JSON
+parser.add_argument("--mask", action='store_true')        # Mask MAC addresses etc
+parser.add_argument("--ping", action='store_true')        # Ping test host as part of getting iDRAC/Redfish data
+parser.add_argument("--text", action='store_true')        # Output in text
+parser.add_argument("--force", action='store_true')       # Ignore ping test etc
+parser.add_argument("--print", action='store_true')       # Print out information (e.g. inventory)
+parser.add_argument("--update", action='store_true')      # If file exists update it with latest data
+parser.add_argument("--options", action='store_true')     # Display options information
+parser.add_argument("--version", action='store_true')     # Display version information
+parser.add_argument("--verbose", action='store_true')     # Verbose flag
+parser.add_argument("--download", action='store_true')    # Download file
+parser.add_argument("--nonheadless", action='store_true') # Non headless mode (useful for debugging)
 
 options = vars(parser.parse_args())
 
@@ -725,6 +739,13 @@ if options['options']:
   script_exe = sys.argv[0]
   print_options(script_exe)
   exit()
+
+# Handle nonheadless switch
+
+if options['nonheadless']:
+  options['headless'] = False
+else:
+  options['headless'] = True
 
 # Handle workdir switch
 
@@ -839,6 +860,9 @@ if options['servicetag']:
   for service_tag in service_tags:
     options['servicetag'] = service_tag
     options['servicetagurl'] = "https://www.dell.com/support/home/en-au/product-support/servicetag/%s/overview#" % (options['servicetag'])
+    if options['verbose'] == True:
+      string = "URL: %s" % (options['servicetagurl'])
+      print(string)
     results = get_servicetag_info(options, results)
     print_results(options, results)
 

@@ -56,3 +56,5 @@
 # Added initial support for getting ServiceTag information
 # 0.2.9: Fri 23 Jun 2023 16:33:19 AEST
 # Added ability to dump ServiceTag config CSV
+# 0.3.0: Thu 29 Jun 2023 07:21:47 AEST
+# Added initial code to load driver page for more details
