@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.0
+# Version:      0.3.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -75,22 +75,6 @@ try:
 except ImportError:
   install_and_import("selenium")
   from selenium import webdriver
-
-# Load  fake_useragent
-
-try:
-  from fake_useragent import UserAgent
-except ImportError:
-  install_and_import("fake-useragent")
-  from fake_useragent import UserAgent
-
-# Load selenium-stealth
-
-try:
-  from selenium_stealth import stealth
-except ImportError:
-  install_and_import("selenium-stealth")
-  from selenium_stealth import stealth
 
 # Load bs4
 
@@ -383,6 +367,7 @@ def get_servicetag_info(options, results):
 def get_firmware_info(options, results):
   name   = ""
   link   = ""
+  links  = []
   driver = start_web_driver()
   if options['all'] == True:
     html_file = "%s/%s_all.html" % (options['workdir'], options['model'])
@@ -404,10 +389,6 @@ def get_firmware_info(options, results):
       time.sleep(5)
       html_doc = driver.page_source
     driver.find_element(By.NAME, "btnDriverListToggle").click()
-#    with open(html_file, "w") as file:
-#      file.write(html_doc)
-#    with open(html_file) as file:
-#      html_doc = file.read()
     html_doc = driver.page_source
   html_doc = BeautifulSoup(html_doc, features='lxml')
   for section in html_doc.select("section"):
@@ -416,13 +397,34 @@ def get_firmware_info(options, results):
         if re.search("View full driver details", str(row)):
           for p in row.select("p"):
             if re.search("View full driver details", str(p)):
+              name = ""
               line = str(p)
               href = line.split('href="')[1]
               href = href.split('"')[0]
               driver.get(href)
               d_doc = driver.page_source
-              d_doc = BeautifulSoup(d_doc, features='lxml')
-#              for d_p in d_doc.select("p"): 
+              lines = d_doc.split("\n")
+              for line in lines:
+                if re.search("driverTitleForDriver", line):
+                  base = line.split("</h1>")[0]
+                  base = base.split(">")[-1]
+                if re.search("File Format:", line):
+                  divs = line.split("<div")
+                  for index, div in enumerate(divs):
+                    if re.search("File Format:", div):
+                      desc = re.split("</span>", div)[1]
+                      desc = re.split('">', desc)[-1]
+                      name = "%s - %s" % (base, desc)
+                    if re.search("driversDownload", div):
+                      link = re.split('href="', div)[1]
+                      link = re.split('"', link)[0]
+                      if re.search(r"[a-z,A-Z]", name):
+                        name = re.sub(r"\s+", " ", name)
+                        name = re.sub(r"\.$", "", name)
+                        if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
+                          if not link in links:
+                            links.append(link)
+                            results[name] = link
         else:
           if re.search(r"tableRow_", str(row)):
             for column in row.select("td"):
@@ -446,10 +448,11 @@ def get_firmware_info(options, results):
                     name = name.split('" class=')[0]
                     name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
                     name = re.sub(r"\.$", "", name)
-#                  name = "%s, %s" % (name,column.text)
-          if re.search(r"[a-z,A-Z]", name):
-            name = re.sub(r"\s+", " ", name)
-            if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
+        if re.search(r"[a-z,A-Z]", name):
+          name = re.sub(r"\s+", " ", name)
+          if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
+            if not link in links:
+              links.append(link)
               results[name] = link
   return results
 
