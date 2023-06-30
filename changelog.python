@@ -60,3 +60,5 @@
 # Added initial code to load driver page for more details
 # 0.3.1: Fri 30 Jun 2023 13:50:02 AEST
 # Improved reporting by process driver page for more details
+# 0.3.2: Fri 30 Jun 2023 16:22:53 AEST
+# Improved search and download functions

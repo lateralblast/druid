@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.1
+# Version:      0.3.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -633,6 +633,7 @@ def start_ssh_session(options):
 def print_results(options, results):
   model_dir = "%s/%s" % (options['fwdir'], options['model'])
   total_res = len(results)
+  found = False
   if options['json'] == True:
     print("{")
   counter = 0
@@ -672,10 +673,22 @@ def print_results(options, results):
       else:
         print("  }")
     else:
-      print()
-      print(name)
-      print(url)
-    if options['download'] == True:
+      if re.search("all", options['search']):
+        found = True
+        print()
+        print(name)
+        print(url)
+      else:
+        found = False
+        lc_name = name.lower()
+        lc_url  = url.lower()
+        lc_search = options['search'].lower()
+        if lc_search in lc_name or lc_search in lc_url:
+          found = True
+          print()
+          print(name)
+          print(url)
+    if options['download'] == True and found == True:
       if not os.path.exists(model_dir):
         os.mkdir(model_dir)
       file = os.path.basename(url)
@@ -784,6 +797,11 @@ if not options['username']:
 
 if not options['password']:
   options['password'] = "calvin"
+
+# handle search switch
+
+if not options['search']:
+  options['search'] = "all"
 
 # Handle ip switch
 

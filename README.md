@@ -5,7 +5,7 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.3.1
+Version: 0.3.2
 
 A ruby script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
@@ -55,8 +55,6 @@ Required standard Python modules:
 
 Required additional Python modules:
 
-- selenium_stealth
-- fake_useragent
 - paraminko
 - pygments
 - selenium
@@ -173,8 +171,28 @@ Get the available M630 BIOS firmware:
 ```
 ./druid.py --model r630 --type bios
 
-Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.13.0
-https://dl.dell.com/FOLDER07346772M/1/BIOS_74DF9_WN64_2.13.0.EXE
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0
+https://dl.dell.com/FOLDER09857656M/1/BIOS_MC31G_WN64_2.17.0.EXE
+
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0 - A GnuPG file which contains a cryptographic signature
+https://dl.dell.com/FOLDER09857653M/1/BIOS_MC31G_LN64_2.17.0.BIN.sign
+
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0 - A self-extracting file for use in 64-bit machines
+https://dl.dell.com/FOLDER09783485M/1/R730-021700.efi
+
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0 - An archive of PDF files to provide help and procedural information to the customers
+https://dl.dell.com/FOLDER09892754M/2/R730_R730XD_R630_BIOS_2.17.0.pdf
+
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0 - Update Package for Red Hat Linux
+https://www.dell.com/learn/us/en/uscorp1/terms-of-sale-consumer-license-agreements
+
+```
+
+Search for EFI related firmware in all results:
+
+```
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0 - A self-extracting file for use in 64-bit machines
+https://dl.dell.com/FOLDER09783485M/1/R730-021700.efi
 ```
 
 Get available R630 documentation:
