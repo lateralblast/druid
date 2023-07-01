@@ -165,6 +165,7 @@ Get ServiceTag config (creates a CSV file in the default directory with the serv
 
 ```
 ./druid.py --servicetag XXXXXX --get config
+
 800-12254 : Country Info Mod (AUSTRALIA)
 1x  0P216 MOD,INFO,AUS,SPEC,APCC
 0x  9N534 INFO,COUNTRY,AUSTRALIA,APCC
@@ -211,6 +212,8 @@ https://www.dell.com/learn/us/en/uscorp1/terms-of-sale-consumer-license-agreemen
 Search for EFI related firmware in all results:
 
 ```
+./druid.py --model r630 --search efi
+
 Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0 - A self-extracting file for use in 64-bit machines
 https://dl.dell.com/FOLDER09783485M/1/R730-021700.efi
 ```
