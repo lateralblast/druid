@@ -64,3 +64,5 @@
 # Improved search and download functions
 # 0.3.3: Sat  1 Jul 2023 12:42:55 AEST
 # Added code to format Service Tag config information
+# 0.3.4: Sat  1 Jul 2023 15:18:46 AEST
+# Added table formatted output for Service Tag config

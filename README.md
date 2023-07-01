@@ -5,7 +5,7 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.3.3
+Version: 0.3.4
 
 A python script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
@@ -55,6 +55,7 @@ Required standard Python modules:
 
 Required additional Python modules:
 
+- terminaltables 
 - paraminko
 - pygments
 - selenium
@@ -161,10 +162,10 @@ Warranty
 Expires  28 OCT. 2027
 ```
 
-Get ServiceTag config (creates a CSV file in the default directory with the service tag, e.g. XXXXXX.csv, then formats it):
+Get ServiceTag config (creates a CSV file in the default directory with the service tag, e.g. XXXXXXX.csv, then formats it):
 
 ```
-./druid.py --servicetag XXXXXX --get config
+./druid.py --servicetag XXXXXXX --get config
 
 800-12254 : Country Info Mod (AUSTRALIA)
 1x  0P216 MOD,INFO,AUS,SPEC,APCC
@@ -184,6 +185,32 @@ Get ServiceTag config (creates a CSV file in the default directory with the serv
 1x  KD483 Module,Software,NO-OS
 0x  1U112 SRV,SW,DELL,NULL-OS
 0x  1U112 SRV,SW,DELL,NULL-OS
+...
+```
+
+Get ServiceTag config and output in table format:
+
+```
+./druid.py --servicetag XXXXXX --get config --tables
+┌───────────┬───────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Qty/Item  │ P/N   │ Description                                                                                                   │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 800-12254 │ ----- │ Country Info Mod (AUSTRALIA)                                                                                  │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1x        │ 0P216 │ MOD,INFO,AUS,SPEC,APCC                                                                                        │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 0x        │ 9N534 │ INFO,COUNTRY,AUSTRALIA,APCC                                                                                   │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 780-13169 │ ----- │ C3 - RAID 1 for H710p/H710/H310 (2 HDDs)                                                                      │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1x        │ YPV38 │ Module,Information,C3,MSSR1,R720                                                                              │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 0x        │ 7FHF9 │ INFO,PER720,CONFIG3,MSSR1                                                                                     │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 770-12962 │ ----- │ ReadyRails 2U Sliding Rails                                                                                   │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1x        │ 26P86 │ Module,Rack Rail,Ready Rails,2U,Slide,Slim Form Factor,V3                                                     │
+├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 ...
 ```
 

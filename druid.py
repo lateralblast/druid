@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.3
+# Version:      0.3.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -56,7 +56,7 @@ def install_and_import(package):
   try:
     importlib.import_module(package)
   except ImportError:
-    command = "python3 -m pip install --user %s" % (package)
+    command = "python3 -m pip3 install --user %s" % (package)
     os.system(command)
   finally:
     globals()[package] = importlib.import_module(package)
@@ -95,7 +95,7 @@ except ImportError:
 
 from lxml import etree
 
-# load wget
+# Load wget
 
 try:
   import wget
@@ -126,6 +126,14 @@ try:
 except ImportError:
   install_and_import("redfish")
   import redfish
+
+# Load terminaltables
+
+try:
+  from terminaltables import SingleTable
+except:
+  install_and_import("terminaltables")
+  from terminaltables import SingleTable
 
 # Import By module from selenium webdriver
 
@@ -340,6 +348,12 @@ def get_servicetag_info(options, results):
         file.write(html_doc)
       driver.find_element(By.ID, "current-config-export").click()
     else:
+      if options['tables'] == True:
+        tables = []
+        table_data = []
+      if options['tables'] == True:
+        table_row = [ "Qty/Item", "P/N", "Description" ]
+        table_data.append(table_row)
       with open(csv_file) as file:
         reader = csv.reader(file)
         for row in reader:
@@ -347,12 +361,26 @@ def get_servicetag_info(options, results):
           if not re.search("Component", test):
             if re.search(r"[0-9]", test):
               component = test
-              print(component)
+              if options['tables'] == True:
+                headers = re.split(" : ", component)
+                table_row = [ headers[0], "-----", headers[1] ]
+                table_data.append(table_row)
+              else:
+                print(component)
             part_num = row[1]
             part_des = row[2] 
             part_qty = row[3]
-            string   = "%sx\t%s\t%s" % (part_qty, part_num, part_des)
-            print(string)
+            if options['tables'] == True:
+              part_qty  = "%sx" % (part_qty)
+              table_row = [ part_qty, part_num, part_des ] 
+              table_data.append(table_row)
+            else:
+              string   = "%sx\t%s\t%s" % (part_qty, part_num, part_des)
+              print(string)
+        if options['tables'] == True:
+          table = SingleTable(table_data)
+          table.inner_row_border = True
+          print(table.table)
   else:
     if os.path.exists(html_file) and options['update'] == False:
       with open(html_file) as file:
@@ -746,6 +774,7 @@ parser.add_argument("--text", action='store_true')        # Output in text
 parser.add_argument("--force", action='store_true')       # Ignore ping test etc
 parser.add_argument("--print", action='store_true')       # Print out information (e.g. inventory)
 parser.add_argument("--update", action='store_true')      # If file exists update it with latest data
+parser.add_argument("--tables", action='store_true')      # Format output in tables
 parser.add_argument("--options", action='store_true')     # Display options information
 parser.add_argument("--version", action='store_true')     # Display version information
 parser.add_argument("--verbose", action='store_true')     # Verbose flag
@@ -821,6 +850,13 @@ if options['update']:
   options['update'] = True
 else:
   options['update'] = False
+
+# Handle tables option
+
+if options['tables']:
+  options['tables'] = True
+else:
+  options['tables'] = False 
 
 # Handle ip switch
 
