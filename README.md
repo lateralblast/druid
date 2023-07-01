@@ -122,6 +122,7 @@ options:
   --text
   --force
   --print
+  --tables
   --update
   --options
   --version
