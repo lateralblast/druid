@@ -5,15 +5,15 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.3.2
+Version: 0.3.3
 
-A ruby script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
+A python script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
 
-Previously this script used PhantomJS, it has been updated to use the Firefox headless driver in Selenium.
+Previously this script used PhantomJS, it has been updated to use the Chrome headless driver in Selenium.
 
 By default the script will fetch only the lastest driver information.
-To fetch a full list the -A switch can be used.
+To fetch a full list the --all switch can be used.
 
 If given a specific model it will parse the firmware page for that model, eg for the R610:
 
@@ -93,7 +93,7 @@ usage: druid.py [-h] [--ip IP] [--get GET] [--set SET] [--type TYPE] [--model MO
                 [--search SEARCH] [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR]
                 [--platform PLATFORM] [--username USERNAME] [--password PASSWORD] [--servicetag SERVICETAG] [--all] [--ssh]
                 [--json] [--mask] [--ping] [--text] [--force] [--print] [--update] [--options] [--version] [--verbose]
-                [--download]
+                [--download] [--nonheadless]
 
 options:
   -h, --help            show this help message and exit
@@ -126,6 +126,7 @@ options:
   --version
   --verbose
   --download
+  --nonheadless
   ```
 
 
@@ -151,7 +152,7 @@ Usage:
 Examples
 --------
 
-Get ServiceTag information:
+Get ServiceTag warranty information:
 
 ```
 ./druid.py --servicetag XXXXXX
@@ -160,10 +161,29 @@ Warranty
 Expires  28 OCT. 2027
 ```
 
-Get ServiceTag config (creates a CSV file in the current directory with the service tag, e.g. XXXXXX.csv):
+Get ServiceTag config (creates a CSV file in the default directory with the service tag, e.g. XXXXXX.csv, then formats it):
 
 ```
 ./druid.py --servicetag XXXXXX --get config
+800-12254 : Country Info Mod (AUSTRALIA)
+1x  0P216 MOD,INFO,AUS,SPEC,APCC
+0x  9N534 INFO,COUNTRY,AUSTRALIA,APCC
+780-13169 : C3 - RAID 1 for H710p/H710/H310 (2 HDDs)
+1x  YPV38 Module,Information,C3,MSSR1,R720
+0x  7FHF9 INFO,PER720,CONFIG3,MSSR1
+770-12962 : ReadyRails 2U Sliding Rails
+1x  26P86 Module,Rack Rail,Ready Rails,2U,Slide,Slim Form Factor,V3
+770-12959 : 2U Cable Management Arm
+1x  44F09 Module,Rack Rail,Cable Management Arm,2U,Long,V3
+696-10323 : Optional DAPC(Dell Active Power Controller) Power Savings BIOS Setting
+1x  7X7C7 Module,Information,DAPC,ENBL  PWR SAVINGS
+0x  HNR52 INFO,DAPC,ENBL PWR SAVINGS MD
+0x  HNR52 INFO,DAPC,ENBL PWR SAVINGS MD
+611-10043 : No Operating System
+1x  KD483 Module,Software,NO-OS
+0x  1U112 SRV,SW,DELL,NULL-OS
+0x  1U112 SRV,SW,DELL,NULL-OS
+...
 ```
 
 Get the available M630 BIOS firmware:

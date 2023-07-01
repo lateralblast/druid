@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.2
+# Version:      0.3.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -23,6 +23,7 @@ import argparse
 import urllib3
 import time
 import json
+import csv 
 import sys
 import os
 import re
@@ -36,7 +37,7 @@ from os.path import expanduser
 script_exe = sys.argv[0]
 script_dir = os.path.dirname(script_exe)
 home_dir   = expanduser("~")
-def_dir    = home_dir+"/firmware"
+def_dir    = home_dir+"/druid"
 results    = {}
 models     = []
 
@@ -321,11 +322,11 @@ def get_servicetag_info(options, results):
   name   = ""
   info   = ""
   driver = start_web_driver()
-  html_file = "%s/%s.html" % (options['workdir'], options['servicetag'])
-  conf_file = "%s/%s_config.html" % (options['workdir'], options['servicetag'])
-  csv_file  = "%s/%s_config.csv" % (options['workdir'], options['servicetag'])
+  html_file = "%s/%s.html" % (options['fwdir'], options['servicetag'])
+  conf_file = "%s/%s_config.html" % (options['fwdir'], options['servicetag'])
+  csv_file  = "%s/%s.csv" % (options['fwdir'], options['servicetag'])
   if options['get'] == "config":
-    if not os.path.exists(csv_file) or options['update']:
+    if not os.path.exists(csv_file) or options['update'] == True:
       driver.get(options['servicetagurl'])
       time.sleep(30)
       html_doc = driver.page_source
@@ -339,10 +340,21 @@ def get_servicetag_info(options, results):
         file.write(html_doc)
       driver.find_element(By.ID, "current-config-export").click()
     else:
-      with open(conf_file) as file:
-        html_doc = file.read()
+      with open(csv_file) as file:
+        reader = csv.reader(file)
+        for row in reader:
+          test = row[0]
+          if not re.search("Component", test):
+            if re.search(r"[0-9]", test):
+              component = test
+              print(component)
+            part_num = row[1]
+            part_des = row[2] 
+            part_qty = row[3]
+            string   = "%sx\t%s\t%s" % (part_qty, part_num, part_des)
+            print(string)
   else:
-    if os.path.exists(html_file) and options['update']:
+    if os.path.exists(html_file) and options['update'] == False:
       with open(html_file) as file:
         html_doc = file.read()
     else:
@@ -802,6 +814,13 @@ if not options['password']:
 
 if not options['search']:
   options['search'] = "all"
+
+# Handle update option
+
+if options['update']:
+  options['update'] = True
+else:
+  options['update'] = False
 
 # Handle ip switch
 
