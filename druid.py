@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.4
+# Version:      0.3.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -828,6 +828,9 @@ if not options['output']:
 
 if not options['fwdir']:
   options['fwdir'] = def_dir
+
+if not os.path.exists(options['fwdir']):
+  os.mkdir(options['fwdir'])
 
 # Handle username switch
 
