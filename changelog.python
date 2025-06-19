@@ -70,3 +70,5 @@
 # Re-added code to check default directory exists
 # 0.3.6: Thu Jun 19 03:47:38 PM AEST 2025
 # Code cleanup
+# 0.3.7: Thu Jun 19 04:38:34 PM AEST 2025
+# Fixed servicetag config processing

@@ -16,7 +16,7 @@
 # pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.6
+# Version:      0.3.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -275,6 +275,9 @@ def start_web_driver():
   browser_options.add_experimental_option('useAutomationExtension', False)
   browser_options.add_argument('--disable-blink-features=AutomationControlled')
   browser_options.add_argument("--disable-extensions")
+  browser_options.add_experimental_option("prefs", {
+  "download.default_directory": options['fwdir']
+  })
   if options['headless'] is True:
     browser_options.add_argument("--headless")
   driver = webdriver.Chrome(options = browser_options)
@@ -304,14 +307,50 @@ def get_model_list(options):
       models.append(model)
   return models
 
+def process_servicetag_csv(options):
+  csv_file = f"{options['fwdir']}/{options['servicetag']}.csv"
+  if options['tables'] is True:
+    tables = []
+    table_data = []
+  if options['tables'] is True:
+    table_row = [ "Qty/Item", "P/N", "Description" ]
+    table_data.append(table_row)
+  with open(csv_file, encoding="utf-8") as file:
+    reader = csv.reader(file)
+    for row in reader:
+      test = row[0]
+      if not re.search("Component", test):
+        if re.search(r"[0-9]", test):
+          component = test
+          if options['tables'] is True:
+            headers = re.split(" : ", component)
+            table_row = [ headers[0], "-----", headers[1] ]
+            table_data.append(table_row)
+          else:
+            print(component)
+        part_num = row[1]
+        part_des = row[2]
+        part_qty = row[3]
+        if options['tables'] is True:
+          part_qty  = f"{part_qty}x"
+          table_row = [ part_qty, part_num, part_des ]
+          table_data.append(table_row)
+        else:
+          string = f"{part_qty}x\t{part_num}\t{part_des}"
+          print(string)
+    if options['tables'] is True:
+      table = SingleTable(table_data)
+      table.inner_row_border = True
+      print(table.table)
+
 def get_servicetag_info(options, results):
   """Get Service Tag info from website"""
   name   = ""
   info   = ""
   driver = start_web_driver()
-  html_file = "%s/%s.html" % (options['fwdir'], options['servicetag'])
-  conf_file = "%s/%s_config.html" % (options['fwdir'], options['servicetag'])
-  csv_file  = "%s/%s.csv" % (options['fwdir'], options['servicetag'])
+  html_file = f"{options['fwdir']}/{options['servicetag']}.html"
+  conf_file = f"{options['fwdir']}/{options['servicetag']}_config.html"
+  csv_file  = f"{options['fwdir']}/{options['servicetag']}.csv"
   if options['get'] == "config":
     if not os.path.exists(csv_file) or options['update'] is True:
       driver.get(options['servicetagurl'])
@@ -326,40 +365,10 @@ def get_servicetag_info(options, results):
       with open(conf_file, "w", encoding="utf-8") as file:
         file.write(html_doc)
       driver.find_element(By.ID, "current-config-export").click()
+      if os.path.exists(csv_file):
+        process_servicetag_csv(options)
     else:
-      if options['tables'] is True:
-        tables = []
-        table_data = []
-      if options['tables'] is True:
-        table_row = [ "Qty/Item", "P/N", "Description" ]
-        table_data.append(table_row)
-      with open(csv_file, encoding="utf-8") as file:
-        reader = csv.reader(file)
-        for row in reader:
-          test = row[0]
-          if not re.search("Component", test):
-            if re.search(r"[0-9]", test):
-              component = test
-              if options['tables'] is True:
-                headers = re.split(" : ", component)
-                table_row = [ headers[0], "-----", headers[1] ]
-                table_data.append(table_row)
-              else:
-                print(component)
-            part_num = row[1]
-            part_des = row[2]
-            part_qty = row[3]
-            if options['tables'] is True:
-              part_qty  = f"{part_qty}x"
-              table_row = [ part_qty, part_num, part_des ]
-              table_data.append(table_row)
-            else:
-              string = f"{part_qty}x\t{part_num}\t{part_des}"
-              print(string)
-        if options['tables'] is True:
-          table = SingleTable(table_data)
-          table.inner_row_border = True
-          print(table.table)
+      process_servicetag_csv(options)
   else:
     if os.path.exists(html_file) and options['update'] is False:
       with open(html_file, encoding="utf-8") as file:
