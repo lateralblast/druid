@@ -1,7 +1,22 @@
 #!/usr/bin/env python
+"""Python script to get available firmware from Dell site and check iDRAC"""
+
+# pylint: disable=C0103
+# pylint: disable=C0209
+# pylint: disable=C0301
+# pylint: disable=C0413
+# pylint: disable=C0415
+# pylint: disable=R0912
+# pylint: disable=R0914
+# pylint: disable=R0915
+# pylint: disable=R1702
+# pylint: disable=W0311
+# pylint: disable=W0611
+# pylint: disable=W0621
+# pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.5
+# Version:      0.3.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -18,19 +33,21 @@
 
 import urllib.request
 import subprocess
+import importlib
 import platform
 import argparse
-import urllib3
+import socket
 import time
 import json
-import csv 
+import csv
 import sys
 import os
 import re
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 from os.path import expanduser
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Set some defaults
 
@@ -41,27 +58,21 @@ def_dir    = home_dir+"/druid"
 results    = {}
 models     = []
 
-# Check we have pip installed
-
 try:
   from pip._internal import main
 except ImportError:
   os.system("easy_install pip")
   os.system("pip install --upgrade pip")
 
-# install and import a python module
-
 def install_and_import(package):
-  import importlib
+  """Install and import a python module"""
   try:
     importlib.import_module(package)
   except ImportError:
-    command = "python3 -m pip3 install --user %s" % (package)
+    command = f"python3 -m pip install --user {package}"
     os.system(command)
   finally:
     globals()[package] = importlib.import_module(package)
-
-# Load requests
 
 try:
   import requests
@@ -69,23 +80,23 @@ except ImportError:
   install_and_import("requests")
   import requests
 
-# Load selenium
-
 try:
   from selenium import webdriver
 except ImportError:
   install_and_import("selenium")
   from selenium import webdriver
 
-# Load bs4
+try:
+  from selenium.webdriver.common.by import By
+except ImportError:
+  install_and_import("selenium")
+  from selenium.webdriver.common.by import By
 
 try:
   from bs4 import BeautifulSoup
 except ImportError:
   install_and_import("bs4")
   from bs4 import BeautifulSoup
-
-# Load lxml
 
 try:
   import lxml
@@ -95,15 +106,11 @@ except ImportError:
 
 from lxml import etree
 
-# Load wget
-
 try:
   import wget
 except ImportError:
   install_and_import("wget")
   import wget
-
-# load paraminko
 
 try:
   import paramiko
@@ -111,15 +118,11 @@ except ImportError:
   install_and_import("paramiko")
   import paramiko
 
-# Load pexpect
-
 try:
   import pexpect
 except ImportError:
   install_and_import("pexpect")
   import pexpect
-
-# Load redfish
 
 try:
   import redfish
@@ -127,19 +130,11 @@ except ImportError:
   install_and_import("redfish")
   import redfish
 
-# Load terminaltables
-
 try:
   from terminaltables import SingleTable
-except:
+except ImportError:
   install_and_import("terminaltables")
   from terminaltables import SingleTable
-
-# Import By module from selenium webdriver
-
-from selenium.webdriver.common.by import By
-
-# Load pygments
 
 try:
   from pygments import highlight
@@ -148,37 +143,31 @@ except ImportError:
   from pygments import highlight
 
 from pygments.formatters.terminal256 import Terminal256Formatter
-from pygments.lexers.web import JsonLexer  
+from pygments.lexers.web import JsonLexer
 
-# Print version
-
-def print_version(script_exe):
-  file_array = file_to_array(script_exe)
+def print_version(file_name):
+  """Print version"""
+  file_array = file_to_array(file_name)
   version    = list(filter(lambda x: re.search(r"^# Version", x), file_array))[0].split(":")[1]
   version    = re.sub(r"\s+","",version)
   print(version)
-  return
 
-# Print help
-
-def print_help(script_exe):
+def print_help(file_name):
+  """Print help"""
   print("\n")
-  command    = "%s -h" % (script_exe)
+  command = f"{file_name} -h"
   os.system(command)
   print("\n")
-  return
-
-# Read a file into an array
 
 def file_to_array(file_name):
-  file_data  = open(file_name)
-  file_array = file_data.readlines()
+  """Read a file into an array"""
+  with open(file_name, encoding="utf-8") as file:
+    file_array = file.readlines()
   return file_array
 
-# Print options
-
-def print_options(script_exe):
-  file_array = file_to_array(script_exe)
+def print_options(file_name):
+  """Print options"""
+  file_array = file_to_array(file_name)
   opts_array = list(filter(lambda x:re.search(r"add_argument", x), file_array))
   print("\nOptions:\n")
   for line in opts_array:
@@ -187,19 +176,18 @@ def print_options(script_exe):
       option = line.split('"')[1]
       info   = line.split("# ")[1]
       if len(option) < 8:
-        string = "%s\t\t\t%s" % (option,info)
+        o_string = f"{option}\t\t\t{info}"
       else:
         if len(option) < 16:
-          string = "%s\t\t%s" % (option,info)
+          o_string = f"{option}\t\t{info}"
         else:
-          string = "%s\t%s" % (option,info)
-      print(string)
+          o_string = f"{option}\t{info}"
+      print(o_string)
   print("\n")
-  return
 
-# Check IP
 
 def check_valid_ip(ip):
+  """Check IP"""
   if not re.search(r"[a-z]",ip):
     try:
       socket.inet_pton(socket.AF_INET, ip)
@@ -209,84 +197,77 @@ def check_valid_ip(ip):
       except socket.error:
         return False
       return ip.count('.') == 3
-    except socket.error:  # not a valid address
+    except socket.error:
       return False
   else:
     return True
-
-# Check host is up
+  return False
 
 def check_ping(ip):
+  """Check host is up"""
   try:
     output = subprocess.check_output("ping -{} 1 {}".format('n' if platform.system().lower()=="windows" else 'c', ip), shell=True)
+    return output
   except Exception:
-    string = "Warning:\tHost %s not responding" % (ip)
+    string = f"Warning:\tHost {ip} not responding"
     handle_output(options,string)
     return False
-  return True 
 
-# Handle output
-
-def handle_output(options,output):
-  if options['mask'] == True:
+def handle_output(options, output):
+  """Handle output"""
+  if options['mask'] is True:
     if re.search(r"serial|address|host|id",output.lower()):
       if re.search(":",output):
         param  = output.split(":")[0]
-        output = "%s: XXXXXXXX" % (param)
+        output = f"{param}: XXXXXXXX"
   print(output)
-  return
 
-# Execute command
-
-def execute_command(options,command):
-  process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, )
-  output  = process.communicate()[0].decode()
-  if options['verbose'] == True:
-    string = "Output:\n%s" % (output)
+def execute_command(options, command):
+  """Execute command"""
+  with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, ) as process:
+    output = process.communicate()[0].decode()
+  if options['verbose'] is True:
+    string = f"Output:\n{output}"
     handle_output(options,string)
-  return
-
-# Get document URLs
 
 def print_document_urls(options):
+  """Get document URLs"""
   if options['model']:
     if re.search(r"[m,r][0-9]1[0-9]",options['model'].lower()):
-      base_owners_url = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
-      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
+      base_owners_url = f"https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_{options['hwtype']}/{options['hwtype']}-"
+      base_setup_url  = f"https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_{options['hwtype']}/{options['hwtype']}-"
     else:
-      base_owners_url = "https://dl.dell.com/topicspdf/%s-" % (options['hwtype'])
-      base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
+      base_owners_url = f"https://dl.dell.com/topicspdf/{options['hwtype']}-"
+      base_setup_url  = f"https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_{options['hwtype']}/{options['hwtype']}-"
   else:
-    base_owners_url = "https://dl.dell.com/topicspdf/%s-" % (options['hwtype'])
-    base_setup_url  = "https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_%s/%s-" % (options['hwtype'], options['hwtype'])
+    base_owners_url = f"https://dl.dell.com/topicspdf/{options['hwtype']}-"
+    base_setup_url  = f"https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_{options['hwtype']}/{options['hwtype']}-"
   if re.search(r"[m,r][0-9]1[0-9]", options['model'].lower()):
     if re.search(r"r610", options['model'].lower()):
-      owners_url = "%s%s_owner%%27s%%20manual2_en-us.pdf" % (base_owners_url,options['model'])
+      owners_url = f"{base_owners_url}{options['model']}_owner%27s%20manual2_en-us.pdf"
     else:
-      owners_url = "%s%s_owner%%27s%%20manual_en-us.pdf" % (base_owners_url,options['model'])
+      owners_url = f"{base_owners_url}{options['model']}_owner%27s%20manual_en-us.pdf"
   else:
-    owners_url = "%s%s_owners-manual_en-us.pdf" % (base_owners_url, options['model'])
-  setup_url = "%s%s_setup%%20guide_en-us.pdf" % (base_setup_url, options['model'])
-  string    = "%s %s:" % (options['hwupcase'], options['model'])
+    owners_url = f"{base_owners_url}{options['model']}_owners-manual_en-us.pdf"
+  setup_url = f"{base_setup_url}{options['model']}_setup%20guide_en-us.pdf"
+  string    = f"{options['hwupcase']} {options['model']}:"
   handle_output(options, string)
   handle_output(options, owners_url)
   handle_output(options, setup_url)
-  if options['download'] == True:
+  if options['download'] is True:
     for url in [ owners_url, setup_url ]:
       file = os.path.basename(url)
-      file = "%s/%s" % (options['fwdir'], file)
-      download_file(options,url, file)
+      file = f"{options['fwdir']}/{file}"
+      download_file(options, url, file)
       if re.search(r"owner", file):
         if not os.path.exists(file):
           options['hwtype'] = options['hwupcase'].downcase
-          url = "http://topics-cdn.dell.com/pdf/%s-%s_Owner's%%20Manual_en-us.pdf" % (options['hwtype'], options['model'])
-          download_file(options,url, file)
+          url = f"http://topics-cdn.dell.com/pdf/{options['hwtype']}-{options['model']}_Owner's%20Manual_en-us.pdf"
+          download_file(options, url, file)
   print()
-  return
-
-# Initiate web client
 
 def start_web_driver():
+  """Initiate web client"""
   from selenium import webdriver
   from selenium.webdriver.chrome.options import Options
   browser_options = Options()
@@ -294,16 +275,15 @@ def start_web_driver():
   browser_options.add_experimental_option('useAutomationExtension', False)
   browser_options.add_argument('--disable-blink-features=AutomationControlled')
   browser_options.add_argument("--disable-extensions")
-  if options['headless'] == True:
+  if options['headless'] is True:
     browser_options.add_argument("--headless")
   driver = webdriver.Chrome(options = browser_options)
   driver.execute_cdp_cmd('Network.setUserAgentOverride', {"userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.53 Safari/537.36'})
   driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
   return driver
 
-# Get list of models
-
 def get_model_list(options):
+  """Get list of models"""
   if re.search(r"poweredge",options['hwtype'].lower()):
     top_url = "https://www.dell.com/en-au/work/shop/dell-poweredge-servers/sc/servers"
   else:
@@ -324,9 +304,8 @@ def get_model_list(options):
       models.append(model)
   return models
 
-# Get Service Tag info from website
-
 def get_servicetag_info(options, results):
+  """Get Service Tag info from website"""
   name   = ""
   info   = ""
   driver = start_web_driver()
@@ -334,93 +313,91 @@ def get_servicetag_info(options, results):
   conf_file = "%s/%s_config.html" % (options['fwdir'], options['servicetag'])
   csv_file  = "%s/%s.csv" % (options['fwdir'], options['servicetag'])
   if options['get'] == "config":
-    if not os.path.exists(csv_file) or options['update'] == True:
+    if not os.path.exists(csv_file) or options['update'] is True:
       driver.get(options['servicetagurl'])
       time.sleep(30)
       html_doc = driver.page_source
-      with open(html_file, "w") as file:
+      with open(html_file, "w", encoding="utf-8") as file:
         file.write(html_doc)
       html_doc = BeautifulSoup(html_doc, features='lxml')
       driver.find_element(By.ID, "quicklink-sysconfig").click()
       time.sleep(5)
       html_doc  = driver.page_source
-      with open(conf_file, "w") as file:
+      with open(conf_file, "w", encoding="utf-8") as file:
         file.write(html_doc)
       driver.find_element(By.ID, "current-config-export").click()
     else:
-      if options['tables'] == True:
+      if options['tables'] is True:
         tables = []
         table_data = []
-      if options['tables'] == True:
+      if options['tables'] is True:
         table_row = [ "Qty/Item", "P/N", "Description" ]
         table_data.append(table_row)
-      with open(csv_file) as file:
+      with open(csv_file, encoding="utf-8") as file:
         reader = csv.reader(file)
         for row in reader:
           test = row[0]
           if not re.search("Component", test):
             if re.search(r"[0-9]", test):
               component = test
-              if options['tables'] == True:
+              if options['tables'] is True:
                 headers = re.split(" : ", component)
                 table_row = [ headers[0], "-----", headers[1] ]
                 table_data.append(table_row)
               else:
                 print(component)
             part_num = row[1]
-            part_des = row[2] 
+            part_des = row[2]
             part_qty = row[3]
-            if options['tables'] == True:
-              part_qty  = "%sx" % (part_qty)
-              table_row = [ part_qty, part_num, part_des ] 
+            if options['tables'] is True:
+              part_qty  = f"{part_qty}x"
+              table_row = [ part_qty, part_num, part_des ]
               table_data.append(table_row)
             else:
-              string   = "%sx\t%s\t%s" % (part_qty, part_num, part_des)
+              string = f"{part_qty}x\t{part_num}\t{part_des}"
               print(string)
-        if options['tables'] == True:
+        if options['tables'] is True:
           table = SingleTable(table_data)
           table.inner_row_border = True
           print(table.table)
   else:
-    if os.path.exists(html_file) and options['update'] == False:
-      with open(html_file) as file:
+    if os.path.exists(html_file) and options['update'] is False:
+      with open(html_file, encoding="utf-8") as file:
         html_doc = file.read()
     else:
       driver.get(options['servicetagurl'])
       time.sleep(30)
       html_doc = driver.page_source
-      with open(html_file, "w") as file:
+      with open(html_file, "w", encoding="utf-8") as file:
         file.write(html_doc)
-      with open(html_file) as file:
+      with open(html_file, encoding="utf-8") as file:
         html_doc = file.read()
     html_doc = BeautifulSoup(html_doc, features='lxml')
     for section in html_doc.select('p'):
       if re.search("warrantyExpiringLabel mb-0 ml-1 mr-1", str(section)):
         name = "Warranty"
-        info = str(section).split("\n")[0].split(">")[1].split("<")[0]
+        info = str(section).split("\n", maxsplit=1)[0].split(">")[1].split("<")[0]
         results[name] = info
   return results
 
-
-# Get Firmware info from website
-
 def get_firmware_info(options, results):
+  """Get Firmware info from website"""
   name   = ""
   link   = ""
   links  = []
   driver = start_web_driver()
-  if options['all'] == True:
-    html_file = "%s/%s_all.html" % (options['workdir'], options['model'])
+  if options['all'] is True:
+    html_file = f"{options['workdir']}/{options['model']}_all.html"
   else:
-    html_file = "%s/%s_latest.html" % (options['workdir'], options['model'])
-  if os.path.exists(html_file) and options['update'] == False:
-    with open(html_file) as file:
+    html_file = f"{options['workdir']}/{options['model']}_latest.html"
+  if os.path.exists(html_file) and options['update'] is False:
+    with open(html_file, encoding="utf-8") as file:
       html_doc = file.read()
   else:
     driver.get(options['modelurl'])
     time.sleep(5)
     html_doc = driver.page_source
-    if options['all'] == True:
+    if options['all'] is True:
       if re.search(r"_evidon-accept-button", str(html_doc)):
         driver.find_element(By.ID, "_evidon-accept-button").click()
         driver.find_element(By.ID, "paginationRow").click()
@@ -454,7 +431,7 @@ def get_firmware_info(options, results):
                     if re.search("File Format:", div):
                       desc = re.split("</span>", div)[1]
                       desc = re.split('">', desc)[-1]
-                      name = "%s - %s" % (base, desc)
+                      name = f"{base} - {desc}"
                     if re.search("driversDownload", div):
                       link = re.split('href="', div)[1]
                       link = re.split('"', link)[0]
@@ -462,7 +439,7 @@ def get_firmware_info(options, results):
                         name = re.sub(r"\s+", " ", name)
                         name = re.sub(r"\.$", "", name)
                         if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
-                          if not link in links:
+                          if link not in links:
                             links.append(link)
                             results[name] = link
         else:
@@ -491,26 +468,24 @@ def get_firmware_info(options, results):
         if re.search(r"[a-z,A-Z]", name):
           name = re.sub(r"\s+", " ", name)
           if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
-            if not link in links:
+            if link not in links:
               links.append(link)
               results[name] = link
   return results
 
-# Check iDRAC redfish support
-
 def check_idrac_redfish(options, base_url):
-  response = requests.get(base_url, verify=False, auth=(options['username'], options['password']))
-  data = response.json()
+  """Check iDRAC redfish support"""
+  response = requests.get(base_url, verify=False, auth=(options['username'], options['password']), timeout=30)
   if response.status_code != 200:
     print("\nWARNING: iDRAC version installed does not support this feature using Redfish API\n")
-    exit()
-  return
-
-# Get iDRAC information via SSH
+    sys.exit()
 
 def get_idrac_ssh_info(options):
+  """Get iDRAC information via SSH"""
   if re.search(r"inventory", options['get'].lower()):
     command = "racadm hwinventory"
+  else:
+    command = f"racadm {options['get']}"
   ssh_session = start_ssh_session(options)
   ssh_session.expect("/admin1-> ")
   ssh_session.sendline(command)
@@ -519,27 +494,38 @@ def get_idrac_ssh_info(options):
   output = output.decode()
   return output
 
-# Get iDRAC hardware inventory via SSH
+def set_idrac_ssh_info(options):
+  """Get iDRAC information via SSH"""
+  if re.search(r"inventory", options['get'].lower()):
+    command = "racadm hwinventory"
+  else:
+    command = f"racadm {options['set']}"
+  ssh_session = start_ssh_session(options)
+  ssh_session.expect("/admin1-> ")
+  ssh_session.sendline(command)
+  ssh_session.expect("/admin1-> ")
+  output = ssh_session.before
+  output = output.decode()
+  return output
 
 def get_idrac_ssh_hw_inventory(options):
+  """Get iDRAC hardware inventory via SSH"""
   d_json = []
   d_text = []
-  inv_file  = "%s/%s_hwinv.text" % (options['workdir'], options['ip'])
-  json_file = "%s/%s_hwinv.json" % (options['workdir'], options['ip'])
-  if not os.path.exists(inv_file) or not os.path.exists(json_file) or options['update'] == True:
+  inv_file  = f"{options['workdir']}/{options['ip']}_hwinv.text"
+  json_file = f"{options['workdir']}/{options['ip']}_hwinv.json"
+  if not os.path.exists(inv_file) or not os.path.exists(json_file) or options['update'] is True:
     hw_inv = get_idrac_ssh_info(options)
-    with open(inv_file, "w") as file:
+    with open(inv_file, "w", encoding="utf-8") as file:
       file.write(hw_inv)
     hw_inv = file_to_array(inv_file)
     items  = filter(lambda a: "InstanceID:" in a, hw_inv)
     items  = len((list(items)))
-    firmware = ""
     instance = ""
-    device = ""
     d_json.append("{")
     for index, line in enumerate(hw_inv):
       line = line.rstrip()
-      if options['text'] == True and options['print'] == True:
+      if options['text'] is True and options['print'] is True:
         d_text.append(line)
       else:
         if re.search(r"InstanceID:", line):
@@ -548,7 +534,7 @@ def get_idrac_ssh_hw_inventory(options):
           string   = "  \"%s\": {" % (instance)
           d_json.append(string)
           items = items-1
-        else: 
+        else:
           if re.search(r"---", line) and not re.search("[A-Z]", line):
             if items > 0:
               d_json.append("  },")
@@ -565,42 +551,41 @@ def get_idrac_ssh_hw_inventory(options):
     d_json.append("}")
     d_json = "\n".join(d_json)
     d_text = "\n".join(d_text)
-    if os.path.exists(inv_file) or options['update'] == True:
-      with open(inv_file, "w") as file:
+    if os.path.exists(inv_file) or options['update'] is True:
+      with open(inv_file, "w", encoding="utf-8") as file:
         file.write(d_text)
-    if os.path.exists(json_file) or options['update'] == True:
-      with open(json_file, "w") as file:
+    if os.path.exists(json_file) or options['update'] is True:
+      with open(json_file, "w", encoding="utf-8") as file:
         file.write(d_json)
-  if options['text'] == True:
+  if options['text'] is True:
     output = file_to_array(inv_file)
     for line in output:
       line = line.rstrip()
-      if options['print'] == True:  
+      if options['print'] is True:
         print(line)
-  if options['json'] == True:
-    open_file = open(json_file, "r")
-    json_data = open_file.read()
-    json_data = json.loads(json_data)
-    json_data = json.dumps(json_data, indent=1)
-    output = highlight(
-      json_data,
-      lexer=JsonLexer(),
-      formatter=Terminal256Formatter(),
-    )
-    if options['print'] == True:  
-      print(output)
-      open_file.close()
-  return(output)
-
-# Get iDRAC information via Redfish
+  if options['json'] is True:
+    with open(json_file, encoding="utf-8") as file:
+      json_data = file.read()
+      json_data = json.loads(json_data)
+      json_data = json.dumps(json_data, indent=1)
+      output = highlight(
+        json_data,
+        lexer=JsonLexer(),
+        formatter=Terminal256Formatter(),
+      )
+      if options['print'] is True:
+        print(output)
+    file.close()
+  return output
 
 def get_idrac_redfish_info(options):
+  """Get iDRAC information via Redfish"""
   if re.search(r"memory|tag|sku|power|model|bios|cpu|hostname",options['get'].lower()):
     rest_url = "/redfish/v1/Systems/System.Embedded.1"
   else:
     rest_url = "/redfish/v1"
-  base_url = "https://%s%s" % (options['ip'],rest_url)
-  response = requests.get(base_url, verify=False, auth=(options['username'], options['password']))
+  base_url = f"https://{options['ip']}{rest_url}"
+  response = requests.get(base_url, verify=False, auth=(options['username'], options['password']), timeout=30)
   data = response.json()
   if re.search(r"memory",options['get'].lower()):
     print("MemorySummary->TotalSystemMemoryGiB:", end=" ")
@@ -620,11 +605,9 @@ def get_idrac_redfish_info(options):
   if re.search(r"hostname",options['get'].lower()):
     print("HostName:", end=" ")
     print(data['HostName'])
-  return
-
-# Set iDRAC information via Redfish
 
 def set_idrac_redfish_info(options):
+  """Set iDRAC information via Redfish"""
   if re.search(r"power", options['set'].lower()):
     rest_url   = "/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
     reset_type = options['value'].lower()
@@ -636,53 +619,49 @@ def set_idrac_redfish_info(options):
   else:
     return
   headers  = {'content-type': 'application/json'}
-  base_url = "https://%s%s" % (options['ip'],rest_url)
-  response = requests.post(base_url, data=json.dumps(payload), headers=headers, verify=False, auth=(options['username'], options['password']))
+  base_url = f"https://{options['ip']}{rest_url}"
+  response = requests.post(base_url, data=json.dumps(payload), headers=headers, verify=False, auth=(options['username'], options['password']), timeout=30)
   status   = response.status_code
   if status == 204:
     print("\nPASS: status code %s returned, server power state successfully set to \"%s\"\n" % (status, options['value']))
   else:
     print("\nFAIL: Command failed, status code %s returned\n" % status)
     print(response.json())
-    exit()
-  return
-
-# Download file
+    sys.exit()
 
 def download_file(options, url, file):
-  if options['download'] == True:
+  """Download file"""
+  if options['download'] is True:
     if not os.path.exists(file):
-      string  = "Downloading %s to %s" % (url,file)
-      command = "wget %s -O %s -q" % (url,file)
+      string  = f"Downloading {url} to {file}"
+      command = f"wget {url} -O {file} -q"
       handle_output(options,string)
-      process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, )
-  return
-
-# Initiate SSH Session
+      with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, ) as process:
+        output = process.communicate()[0].decode()
 
 def start_ssh_session(options):
+  """Initiate SSH Session"""
   ssh_command = "ssh -o StrictHostKeyChecking=no"
-  ssh_command = "%s %s@%s" % (ssh_command, options['username'], options['ip'])
+  ssh_command = f"{ssh_command} {options['username']}@{options['ip']}"
   ssh_session = pexpect.spawn(ssh_command)
   ssh_session.expect("assword: ")
   ssh_session.sendline(options['password'])
   return ssh_session
 
-# Print results
-
 def print_results(options, results):
-  model_dir = "%s/%s" % (options['fwdir'], options['model'])
+  """Print results"""
+  model_dir = f"{options['fwdir']}/{options['model']}"
   total_res = len(results)
   found = False
-  if options['json'] == True:
+  if options['json'] is True:
     print("{")
   counter = 0
-  for name, url in results.items(): 
+  for name, url in results.items():
     counter = counter+1
     version = ""
     descs = []
     desc  = ""
-    if options['json'] == True:
+    if options['json'] is True:
       fields = name.split(" ")
       for field in fields:
         if re.search(r"[0-9]\.[0-9]|^[v,V][0-9]|^[v|V]\.[0-9]", field):
@@ -701,7 +680,7 @@ def print_results(options, results):
       version = re.sub(r"[A-Z,a-z]", "", version)
       version = re.sub(r"^\.|\.$", "", version)
       desc = " ".join(descs)
-      desc = re.sub("\,$|\.$", "", desc)
+      desc = re.sub(r"\,$|\.$", "", desc)
       string = "  '%s': {" % (desc)
       print(string)
       string = "    'version': '%s'," % (version)
@@ -728,23 +707,20 @@ def print_results(options, results):
           print()
           print(name)
           print(url)
-    if options['download'] == True and found == True:
+    if options['download'] is True and found is True:
       if not os.path.exists(model_dir):
         os.mkdir(model_dir)
       file = os.path.basename(url)
-      file = "%s/%s" % (model_dir, file)
+      file = f"{model_dir}/{file}"
       download_file(options, url, file)
-  if options['json'] == True:
+  if options['json'] is True:
     print("}")
   else:
     print()
-  return
-
-# If we have no command line arguments print help
 
 if sys.argv[-1] == sys.argv[0]:
   print_help(script_exe)
-  exit()
+  sys.exit()
 
 # Get command line arguments
 
@@ -783,48 +759,32 @@ parser.add_argument("--nonheadless", action='store_true') # Non headless mode (u
 
 options = vars(parser.parse_args())
 
-# Handle version switch
-
 if options['version']:
   script_exe = sys.argv[0]
   print_version(script_exe)
-  exit()
-
-# Handle options switch
+  sys.exit()
 
 if options['options']:
   script_exe = sys.argv[0]
   print_options(script_exe)
-  exit()
-
-# Handle nonheadless switch
+  sys.exit()
 
 if options['nonheadless']:
   options['headless'] = False
 else:
   options['headless'] = True
 
-# Handle workdir switch
-
 if not options['workdir']:
   options['workdir'] = script_dir
-
-# Set default username
 
 if not options['username']:
   options['username'] = "root"
 
-# Set default password
-
 if not options['password']:
   options['username'] = "calvin"
 
-# Set default output type
-
 if not options['output']:
   options['output'] = "text"
-
-# Set default download directory
 
 if not options['fwdir']:
   options['fwdir'] = def_dir
@@ -832,63 +792,50 @@ if not options['fwdir']:
 if not os.path.exists(options['fwdir']):
   os.mkdir(options['fwdir'])
 
-# Handle username switch
-
 if not options['username']:
   options['username'] = "root"
-
-# Handle password switch
 
 if not options['password']:
   options['password'] = "calvin"
 
-# handle search switch
-
 if not options['search']:
   options['search'] = "all"
-
-# Handle update option
 
 if options['update']:
   options['update'] = True
 else:
   options['update'] = False
 
-# Handle tables option
-
 if options['tables']:
   options['tables'] = True
 else:
-  options['tables'] = False 
-
-# Handle ip switch
+  options['tables'] = False
 
 if options['ip']:
-  if options['ping'] == True:
+  if options['ping'] is True:
     check_ping = check_ping(options['ip'])
-    if check_ping == False:
-      string = "Host %s not responding" % (options['ip'])
-      exit()
+    if check_ping is False:
+      string = f"Host {options['ip']} not responding"
+      print(string)
+      sys.exit()
   if options['check']:
     if re.search(r"inventory", options['check']):
       options['get'] = options['check']
-      parse_idrac_ssh_hw_inventory(options)
+      #parse_idrac_ssh_hw_inventory(options)
   else:
     if options['get']:
       if re.search(r"inventory", options['get']):
         get_idrac_ssh_hw_inventory(options)
       else:
-        if options['ssh'] == True:
+        if options['ssh'] is True:
           get_idrac_redfish_info(options)
         else:
           get_idrac_ssh_info(options)
     if options['set']:
-      if options['ssh'] == True:
+      if options['ssh'] is True:
         set_idrac_redfish_info(options)
       else:
         set_idrac_ssh_info(options)
-
-# Handle platform switch and set default if not given
 
 if not options['platform']:
   options['hwtype']   = "poweredge"
@@ -903,9 +850,7 @@ else:
 if not options['type']:
   options['type'] = "list"
 
-# Handle download switch and create download directory
-
-if options['download'] == True:
+if options['download'] is True:
   if not os.path.exists(options['fwdir']):
     os.mkdir(options['fwdir'])
   if options['model']:
@@ -913,20 +858,16 @@ if options['download'] == True:
     if not os.path.exists(model_dir):
       os.mkdir(model_dir)
 
-# Handle type switch
-
 if re.search(r"manual|pdf",options['type']):
   print()
   if re.search(r"all",options['model']):
     models = get_model_list(options)
-    for model_name in models: 
+    for model_name in models:
       options['model'] = model_name
       print_document_urls(options)
   else:
     print_document_urls(options)
-  exit()
-
-# Handle service tag switch
+  sys.exit()
 
 if options['servicetag']:
   if not options['get']:
@@ -938,41 +879,37 @@ if options['servicetag']:
     service_tags.append(options['servicetag'])
   for service_tag in service_tags:
     options['servicetag'] = service_tag
-    options['servicetagurl'] = "https://www.dell.com/support/home/en-au/product-support/servicetag/%s/overview#" % (options['servicetag'])
-    if options['verbose'] == True:
-      string = "URL: %s" % (options['servicetagurl'])
+    options['servicetagurl'] = f"https://www.dell.com/support/home/en-au/product-support/servicetag/{options['servicetag']}/overview#"
+    if options['verbose'] is True:
+      string = f"URL: {options['servicetagurl']}"
       print(string)
     results = get_servicetag_info(options, results)
     print_results(options, results)
 
-# Handle model switch
-
 if options['model']:
   if re.search(r"all",options['model']):
-    models = get_model_list(top_url)
+    models = get_model_list(options)
     for model_name in models:
       options['model']    = model_name
       options['model']    = options['model'].lower()
-      options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/%s-%s/drivers" % (options['hwtype'], options['model'])
+      options['modelurl'] = f"https://www.dell.com/support/home/en-au/product-support/product/{options['hwtype']}-{options['model']}/drivers"
       if options['type'] == "list":
         if len(options['model']) < 5:
-          string = "%s %s:\t\t%s" % (options['hwupcase'], options['model'].upper(), options['modelurl'])
+          string = f"{options['hwupcase']} {options['model'].upper()}:\t\t{options['modelurl']}"
           handle_output(options,string)
         else:
-          string = "%s %s:\t%s" % (options['hwupcase'], options['model'].upper(), options['modelurl'])
+          string = f"{options['hwupcase']} {options['model'].upper()}:\t{options['modelurl']}"
           handle_output(options, string)
       else:
-        if options['verbose'] == True:
-          string = "URL: %s" % (options['modelurl'])
+        if options['verbose'] is True:
+          string = f"URL: {options['modelurl']}"
         results = get_firmware_info(options, results)
         print_results(options, results)
   else:
     options['model']    = options['model'].lower()
-    options['modelurl'] = "https://www.dell.com/support/home/en-au/product-support/product/%s-%s/drivers" % (options['hwtype'], options['model'])
-    if options['verbose'] == True:
-      string = "URL: %s" % (options['modelurl'])
+    options['modelurl'] = f"https://www.dell.com/support/home/en-au/product-support/product/{options['hwtype']}-{options['model']}/drivers"
+    if options['verbose'] is True:
+      string = f"URL: {options['modelurl']}"
       print(string)
     results = get_firmware_info(options, results)
     print_results(options, results)
-
-

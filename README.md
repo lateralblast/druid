@@ -5,7 +5,7 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.3.5
+Version: 0.3.6
 
 A python script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
