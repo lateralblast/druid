@@ -16,7 +16,7 @@
 # pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.7
+# Version:      0.3.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -391,10 +391,14 @@ def get_servicetag_info(options, results):
 
 def get_firmware_info(options, results):
   """Get Firmware info from website"""
-  name   = ""
-  link   = ""
-  links  = []
-  driver = start_web_driver()
+  name    = ""
+  link    = ""
+  links   = []
+  idlink  = ""
+  idlinks = []
+  driver  = start_web_driver()
+  if re.search(r"[a-z]|[A-Z]", options['type']):
+    options['all'] = True
   if options['all'] is True:
     html_file = f"{options['workdir']}/{options['model']}_all.html"
   else:
@@ -420,6 +424,7 @@ def get_firmware_info(options, results):
   for section in html_doc.select("section"):
     for table in section.select("table"):
       for row in table.select("tr"):
+        keyid = ""
         if re.search("View full driver details", str(row)):
           for p in row.select("p"):
             if re.search("View full driver details", str(p)):
@@ -453,6 +458,11 @@ def get_firmware_info(options, results):
                             results[name] = link
         else:
           if re.search(r"tableRow_", str(row)):
+            keyid = str(row)
+            keyid = keyid.split('tableRow_')[1]
+            keyid = keyid.split('"')[0]
+            keyid = keyid.lower()
+            idlink = f"https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid={keyid}"
             for column in row.select("td"):
               if re.search(r"href",str(column)):
                 if re.search(r"download", str(column)):
@@ -480,6 +490,9 @@ def get_firmware_info(options, results):
             if link not in links:
               links.append(link)
               results[name] = link
+            if idlink not in idlinks:
+              detail = f"{name} Details"
+              results[detail] = idlink
   return results
 
 def check_idrac_redfish(options, base_url):
