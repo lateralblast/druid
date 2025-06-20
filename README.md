@@ -22,8 +22,6 @@ https://www.dell.com/support/home/en-au/product-support/product/poweredge-r610/d
 Notice
 ------
 
-There are two scripts, a Ruby script and a Python script.
-
 I'm adding redfish support to the script to get information from the iDRAC.
 The Ruby redfish client module does not have all the features I need,
 therefore I am depricating the Ruby script and moving to Python.
@@ -64,16 +62,6 @@ Required additional Python modules:
 - wget
 - bs4
 
-Required Ruby gems:
-
-- rubygems
-- nokogiri
-- open-uri
-- getopt/std
-- fileutils
-- selenium-webdriver
-- mechanize
-
 If not installed, the script will attempt to install the required modules.
 
 License
@@ -90,11 +78,10 @@ Python:
 
 ```
 ./druid.py --help
-usage: druid.py [-h] [--ip IP] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK]
-                [--search SEARCH] [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR]
-                [--platform PLATFORM] [--username USERNAME] [--password PASSWORD] [--servicetag SERVICETAG] [--all] [--ssh]
-                [--json] [--mask] [--ping] [--text] [--force] [--print] [--update] [--options] [--version] [--verbose]
-                [--download] [--nonheadless]
+usage: druid.py [-h] [--ip IP] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK] [--search SEARCH]
+                [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR] [--platform PLATFORM] [--username USERNAME]
+                [--password PASSWORD] [--servicetag SERVICETAG] [--all] [--ssh] [--json] [--mask] [--ping] [--text] [--force] [--print]
+                [--tables] [--update] [--options] [--version] [--verbose] [--download] [--nonheadless]
 
 options:
   -h, --help            show this help message and exit
@@ -130,26 +117,6 @@ options:
   --download
   --nonheadless
   ```
-
-
-Ruby:
-
-```
-./druid.rb --help
-
-Usage:
-
-'--model',          Model e.g. M610, R720, etc
-'--platform',       Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
-'--type',           Type e.g. BIOS (defaults to listing all)
-'--search',         Search for a term
-'--fwdir',          Set a directory to download to
-'--output',         Output type, e.g. Text, HTML (defaults to Text)
-'--version',        Print version information
-'--help',           Print help information
-'--download',       Download file
-'--all',            Return all versions (by default only latest are returned)
-```
 
 Examples
 --------
@@ -260,7 +227,7 @@ https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_power
 Download BIOS:
 
 ```
-$ ./druid.rb --model m620 --type BIOS --download
+$ ./druid.py --model m620 --type BIOS --download
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
@@ -282,7 +249,7 @@ Saving to: '/Users/spindler/Code/firmware/m620/M620-020210C.efi'
 List latest availabe firmware/software for R610:
 
 ```
-$ ./druid.rb --model r610
+$ ./druid.py --model r610
 
 Dell Server BIOS R610 Version 6.6.0  UrgentDell Server BIOS R610 Version 6.6.0  Urgent, BIOS, 09 Jul 2018
 https://dl.dell.com/FOLDER05012920M/2/BIOS_0YV9D_WN64_6.6.0_01.EXE
@@ -318,7 +285,7 @@ https://dl.dell.com/FOLDER05421853M/1/ESM_Firmware_KPCCC_WN32_2.92_A00.EXE
 List latest availabe BIOS firmware/software for R610:
 
 ```
-$ ./druid.rb --model r610 --type bios
+$ ./druid.py --model r610 --type bios
 
 Dell Server BIOS R610 Version 6.6.0  UrgentDell Server BIOS R610 Version 6.6.0  Urgent, BIOS, 09 Jul 2018
 https://dl.dell.com/FOLDER05012920M/2/BIOS_0YV9D_WN64_6.6.0_01.EXE
@@ -327,7 +294,7 @@ https://dl.dell.com/FOLDER05012920M/2/BIOS_0YV9D_WN64_6.6.0_01.EXE
 List all available firmware/software for M620:
 
 ```
-$ ./druid --model m620 --all
+$ ./druid.py --model m620 --all
 
 Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
 http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
