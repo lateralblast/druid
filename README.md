@@ -77,7 +77,7 @@ Usage
 Python:
 
 ```
-./druid.py --help
+$ ./druid.py --help
 usage: druid.py [-h] [--ip IP] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK] [--search SEARCH]
                 [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR] [--platform PLATFORM] [--username USERNAME]
                 [--password PASSWORD] [--servicetag SERVICETAG] [--all] [--ssh] [--json] [--mask] [--ping] [--text] [--force] [--print]
@@ -124,7 +124,7 @@ Examples
 Get ServiceTag warranty information:
 
 ```
-./druid.py --servicetag XXXXXX
+$ ./druid.py --servicetag XXXXXX
 
 Warranty
 Expires  28 OCT. 2027
@@ -133,7 +133,7 @@ Expires  28 OCT. 2027
 Get ServiceTag config (creates a CSV file in the default directory with the service tag, e.g. XXXXXXX.csv, then formats it):
 
 ```
-./druid.py --servicetag XXXXXXX --get config
+$ ./druid.py --servicetag XXXXXXX --get config
 
 800-12254 : Country Info Mod (AUSTRALIA)
 1x  0P216 MOD,INFO,AUS,SPEC,APCC
@@ -159,7 +159,7 @@ Get ServiceTag config (creates a CSV file in the default directory with the serv
 Get ServiceTag config and output in table format:
 
 ```
-./druid.py --servicetag XXXXXX --get config --tables
+$ ./druid.py --servicetag XXXXXX --get config --tables
 ┌───────────┬───────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Qty/Item  │ P/N   │ Description                                                                                                   │
 ├───────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -185,7 +185,7 @@ Get ServiceTag config and output in table format:
 Get the available M630 BIOS firmware:
 
 ```
-./druid.py --model r630 --type bios
+$ ./druid.py --model r630 --type bios
 
 Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0
 https://dl.dell.com/FOLDER09857656M/1/BIOS_MC31G_WN64_2.17.0.EXE
@@ -207,7 +207,7 @@ https://www.dell.com/learn/us/en/uscorp1/terms-of-sale-consumer-license-agreemen
 Search for EFI related firmware in all results:
 
 ```
-./druid.py --model r630 --search efi
+$ ./druid.py --model r630 --search efi
 
 Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.17.0 - A self-extracting file for use in 64-bit machines
 https://dl.dell.com/FOLDER09783485M/1/R730-021700.efi
@@ -216,7 +216,7 @@ https://dl.dell.com/FOLDER09783485M/1/R730-021700.efi
 Get available R630 documentation:
 
 ```
- ./druid.py --model r630 --type manual
+$ ./druid.py --model r630 --type manual
 
 PowerEdge r630:
 https://dl.dell.com/topicspdf/poweredge-r630_owners-manual_en-us.pdf
@@ -750,7 +750,7 @@ http://downloads.dell.com/FOLDER00247465M/1/A00_WIN64_G200eR_v2.4.1.0.exe
 Get iDRAC hardware inventory in text format:
 
 ```
-./druid.py --get inventory --ip 192.168.11.233 --username root --password calvin --text --print
+$ ./druid.py --get inventory --ip 192.168.11.233 --username root --password calvin --text --print
 racadm hwinventory
 
 
@@ -814,7 +814,7 @@ LastSystemInventoryTime = 2021-11-26T13:31:09
 Get iDRAC hardware inventory in JSON format:
 
 ```
-./druid.py --get inventory --ip 192.168.11.233 --username root --password calvin --json --print
+$ ./druid.py --get inventory --ip 192.168.11.233 --username root --password calvin --json --print
 
 {
  "QuickSync.Integrated.1": {
