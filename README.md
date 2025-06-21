@@ -77,8 +77,6 @@ http://creativecommons.org/licenses/by/4.0/legalcode
 Usage
 -----
 
-Python:
-
 ```
 $ ./druid.py --help
 usage: druid.py [-h] [--ip IP] [--ext EXT] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK]
