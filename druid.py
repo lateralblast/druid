@@ -16,7 +16,7 @@
 # pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.4.2
+# Version:      0.4.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -266,9 +266,10 @@ def print_document_urls(options):
     owners_url = f"{base_owners_url}{options['model']}_owners-manual_en-us.pdf"
   setup_url = f"{base_setup_url}{options['model']}_setup%20guide_en-us.pdf"
   string    = f"{options['hwupcase']} {options['model']}:"
-  handle_output(options, string)
-  handle_output(options, owners_url)
-  handle_output(options, setup_url)
+  if options['quiet'] is False:
+    handle_output(options, string)
+    handle_output(options, owners_url)
+    handle_output(options, setup_url)
   if options['download'] is True:
     for url in [ owners_url, setup_url ]:
       file = os.path.basename(url)
@@ -279,7 +280,8 @@ def print_document_urls(options):
           options['hwtype'] = options['hwupcase'].downcase
           url = f"http://topics-cdn.dell.com/pdf/{options['hwtype']}-{options['model']}_Owner's%20Manual_en-us.pdf"
           download_file(options, url, file)
-  print()
+  if options['quiet'] is False:
+    print()
 
 def start_web_driver():
   """Initiate web client"""
@@ -618,8 +620,21 @@ def set_idrac_redfish_info(options):
     print(response.json())
     sys.exit()
 
-def download_file(options):
+def download_file(options, link, file):
   """Download file"""
+  if options['force'] is True or options['update'] is True:
+    if os.path.exists(file):
+      os.remove(file)
+  if not os.path.exists(file):
+    if options['quiet'] is False:
+      string  = f"Downloading {link} to {file}"
+      print(string)
+    response = requests.get(link)
+    with open(file, 'wb') as file:
+      file.write(response.content)
+
+def download_driverid_files(options):
+  """Download driverid files"""
   url    = options['driverid']
   link   = ""
   keyid  = url.split("=")[1]
@@ -657,13 +672,7 @@ def download_file(options):
               os.mkdir(model_dir)
             file = os.path.basename(link)
             file = f"{model_dir}/{file}"
-            if not os.path.exists(file):
-              if options['verbose'] is True:
-                string = f"Downloading {link} to {file}"
-                print(string)
-              command = f"wget {link} -O {file} -q"
-              with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, ) as process:
-                process.communicate()[0].decode()
+            download_file(options, link, file)
 
 def start_ssh_session(options):
   """Initiate SSH Session"""
@@ -720,13 +729,14 @@ def print_results(options, results):
     else:
       if re.search("all", options['search']):
         found = True
-        print()
-        print(name)
-        print(url)
+        if options['quiet'] is False:
+          print()
+          print(name)
+          print(url)
         if found is True:
           if options['download'] is True or options['list'] is True:
             options['driverid'] = url
-            download_file(options)
+            download_driverid_files(options)
       else:
         found = False
         lc_name = name.lower()
@@ -734,17 +744,19 @@ def print_results(options, results):
         lc_search = options['search'].lower()
         if lc_search in lc_name or lc_search in lc_url:
           found = True
-          print()
-          print(name)
-          print(url)
+          if options['quiet'] is False:
+            print()
+            print(name)
+            print(url)
           if found is True:
             if options['download'] is True or options['list'] is True:
               options['driverid'] = url
-              download_file(options)
+              download_driverid_files(options)
   if options['json'] is True:
     print("}")
   else:
-    print()
+    if options['quiet'] is False:
+      print()
 
 if sys.argv[-1] == sys.argv[0]:
   print_help(script['file'])
@@ -780,6 +792,7 @@ parser.add_argument("--ping", action='store_true')        # Ping test host as pa
 parser.add_argument("--text", action='store_true')        # Output in text
 parser.add_argument("--force", action='store_true')       # Ignore ping test etc
 parser.add_argument("--print", action='store_true')       # Print out information (e.g. inventory)
+parser.add_argument("--quiet", action='store_true')       # Quiet output
 parser.add_argument("--tables", action='store_true')      # Format output in tables
 parser.add_argument("--update", action='store_true')      # If file exists update it with latest data
 parser.add_argument("--options", action='store_true')     # Display options information
@@ -845,7 +858,8 @@ if options['ip']:
     check_ping = check_ping(options['ip'])
     if check_ping is False:
       string = f"Host {options['ip']} not responding"
-      print(string)
+      if options['quiet'] is False:
+        print(string)
       sys.exit()
   if options['check']:
     if re.search(r"inventory", options['check']):
@@ -888,11 +902,12 @@ if options['download'] is True:
       os.mkdir(model_dir)
 
 if options['driverid']:
-  download_file(options)
+  download_driverid_files(options)
   sys.exit()
 
 if re.search(r"manual|pdf",options['type']):
-  print()
+  if options['quiet'] is False:
+    print()
   if re.search(r"all",options['model']):
     models = get_model_list(options)
     for model_name in models:
@@ -915,7 +930,8 @@ if options['servicetag']:
     options['servicetagurl'] = f"https://www.dell.com/support/home/en-au/product-support/servicetag/{options['servicetag']}/overview#"
     if options['verbose'] is True:
       string = f"URL: {options['servicetagurl']}"
-      print(string)
+      if options['quiet'] is False:
+        print(string)
     results = get_servicetag_info(options, results)
     print_results(options, results)
 
@@ -943,6 +959,7 @@ if options['model']:
     options['modelurl'] = f"https://www.dell.com/support/home/en-au/product-support/product/{options['hwtype']}-{options['model']}/drivers"
     if options['verbose'] is True:
       string = f"URL: {options['modelurl']}"
-      print(string)
+      if options['quiet'] is False:
+        print(string)
     results = get_firmware_info(options, results)
     print_results(options, results)

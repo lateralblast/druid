@@ -82,3 +82,11 @@
 # Added code to install chromedriver via pip
 # 0.4.2: Sat 21 Jun 2025 23:04:55 AEST
 # Updated download routine
+# 0.4.3: Sun 22 Jun 2025 07:49:36 AEST
+# Updated documentation
+# 0.4.4: Sun 22 Jun 2025 07:53:27 AEST
+# Converted wget to request so it doesn't get blocked
+# 0.4.5: Sun 22 Jun 2025 08:21:00 AEST
+# Cleaned up download code
+# 0.4.6: Sun 22 Jun 2025 08:28:09 AEST
+# Added quiet switch
