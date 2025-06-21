@@ -5,7 +5,7 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.4.3
+Version: 0.4.7
 
 A python script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
@@ -249,14 +249,13 @@ https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_power
 
 ```
 
-Download BIOS:
+Download EFI BIOS update for R630:
 
 ```
-$ ./druid.py --model r630 --type BIOS --download --verbose
+$ ./druid.py --model r630 --type BIOS --ext efi --download
 
 Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.19.0
 https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid=km6p8
 https://dl.dell.com/FOLDER11275494M/1/R730-021900C.efi
 Downloading https://dl.dell.com/FOLDER11275494M/1/R730-021900C.efi to /home/user/druid/r630/R730-021900C.efi
 ```
-

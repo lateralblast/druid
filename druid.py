@@ -16,7 +16,7 @@
 # pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.4.3
+# Version:      0.4.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -852,6 +852,9 @@ if options['tables']:
   options['tables'] = True
 else:
   options['tables'] = False
+
+if options['download'] is True:
+  options['list'] = True
 
 if options['ip']:
   if options['ping'] is True:
