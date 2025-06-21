@@ -16,7 +16,7 @@
 # pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.3.9
+# Version:      0.4.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -46,17 +46,17 @@ import re
 
 from os.path import expanduser
 
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 # Set some defaults
 
-script_exe = sys.argv[0]
-script_dir = os.path.dirname(script_exe)
-home_dir   = expanduser("~")
-def_dir    = home_dir+"/druid"
-results    = {}
-models     = []
+script  = {}
+results = {}
+models  = []
+
+script['name'] = "druid"
+script['file'] = sys.argv[0]  
+script['path'] = os.path.dirname(script['file'])
+script['home'] = expanduser("~")
+script['work'] = f"{script['home']}/{script['name']}"
 
 try:
   from pip._internal import main
@@ -81,10 +81,25 @@ except ImportError:
   import requests
 
 try:
+  import urllib3
+except ImportError:
+  install_and_import("urllib3")
+  import urllib3
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+try:
   from selenium import webdriver
 except ImportError:
   install_and_import("selenium")
   from selenium import webdriver
+
+try:
+  from webdriver_manager.chrome import ChromeDriverManager
+except ImportError:
+  install_and_import("webdriver_manager")
+  from webdriver_manager.chrome import ChromeDriverManager
 
 try:
   from selenium.webdriver.common.by import By
@@ -391,12 +406,10 @@ def get_servicetag_info(options, results):
 
 def get_firmware_info(options, results):
   """Get Firmware info from website"""
-  name    = ""
-  link    = ""
-  links   = []
-  idlink  = ""
-  idlinks = []
-  driver  = start_web_driver()
+  name   = ""
+  link   = ""
+  links  = []
+  driver = start_web_driver()
   if re.search(r"[a-z]|[A-Z]", options['type']):
     options['all'] = True
   if options['all'] is True:
@@ -411,88 +424,42 @@ def get_firmware_info(options, results):
     time.sleep(5)
     html_doc = driver.page_source
     if options['all'] is True:
-      if re.search(r"_evidon-accept-button", str(html_doc)):
-        driver.find_element(By.ID, "_evidon-accept-button").click()
-        driver.find_element(By.ID, "paginationRow").click()
-      else:
-        driver.find_element(By.ID, "paginationRow").click()
       time.sleep(5)
+      driver.find_element(By.ID, "paginationRow").click()
+    with open(html_file, "w", encoding="utf-8") as file:
       html_doc = driver.page_source
-    driver.find_element(By.NAME, "btnDriverListToggle").click()
-    html_doc = driver.page_source
+      file.write(html_doc)
   html_doc = BeautifulSoup(html_doc, features='lxml')
   for section in html_doc.select("section"):
     for table in section.select("table"):
       for row in table.select("tr"):
         keyid = ""
-        if re.search("View full driver details", str(row)):
-          for p in row.select("p"):
-            if re.search("View full driver details", str(p)):
-              name = ""
-              line = str(p)
-              href = line.split('href="')[1]
-              href = href.split('"')[0]
-              driver.get(href)
-              d_doc = driver.page_source
-              lines = d_doc.split("\n")
-              for line in lines:
-                if re.search("driverTitleForDriver", line):
-                  base = line.split("</h1>")[0]
-                  base = base.split(">")[-1]
-                if re.search("File Format:", line):
-                  divs = line.split("<div")
-                  for index, div in enumerate(divs):
-                    if re.search("File Format:", div):
-                      desc = re.split("</span>", div)[1]
-                      desc = re.split('">', desc)[-1]
-                      name = f"{base} - {desc}"
-                    if re.search("driversDownload", div):
-                      link = re.split('href="', div)[1]
-                      link = re.split('"', link)[0]
-                      if re.search(r"[a-z,A-Z]", name):
-                        name = re.sub(r"\s+", " ", name)
-                        name = re.sub(r"\.$", "", name)
-                        if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
-                          if link not in links:
-                            links.append(link)
-                            results[name] = link
-        else:
-          if re.search(r"tableRow_", str(row)):
-            keyid = str(row)
-            keyid = keyid.split('tableRow_')[1]
-            keyid = keyid.split('"')[0]
-            keyid = keyid.lower()
-            idlink = f"https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid={keyid}"
-            for column in row.select("td"):
-              if re.search(r"href",str(column)):
-                if re.search(r"download", str(column)):
-                  link = str(column)
-                  link = link.split('href="')[1]
-                  link = link.split('  class="')[0]
-                  link = link.split('"')[0]
-              else:
-                if re.search(r"dl-desk-view", str(column)):
-                  name = str(column)
-                  name = name.split('dl-desk-view">')[1]
-                  name = name.split('<span')[0]
-                  name = re.sub(r"^\s+|\s+$", "", name)
-                  name = re.sub(r"\.$", "", name)
-                else:
-                  if re.search(r"aria-label", str(column)):
-                    name = str(column)
-                    name = name.split('aria-label="')[1]
-                    name = name.split('" class=')[0]
-                    name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
-                    name = re.sub(r"\.$", "", name)
+        if re.search(r"tableRow_", str(row)):
+          keyid = str(row)
+          keyid = keyid.split('tableRow_')[1]
+          keyid = keyid.split('"')[0]
+          keyid = keyid.lower()
+          link  = f"https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid={keyid}"
+          for column in row.select("td"):
+            if re.search(r"dl-desk-view", str(column)):
+              name = str(column)
+              name = name.split('dl-desk-view">')[1]
+              name = name.split('<span')[0]
+              name = re.sub(r"^\s+|\s+$", "", name)
+              name = re.sub(r"\.$", "", name)
+            else:
+              if re.search(r"aria-label", str(column)):
+                name = str(column)
+                name = name.split('aria-label="')[1]
+                name = name.split('" class=')[0]
+                name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
+                name = re.sub(r"\.$", "", name)
         if re.search(r"[a-z,A-Z]", name):
           name = re.sub(r"\s+", " ", name)
           if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
             if link not in links:
               links.append(link)
               results[name] = link
-            if idlink not in idlinks:
-              detail = f"{name} Details"
-              results[detail] = idlink
   return results
 
 def check_idrac_redfish(options, base_url):
@@ -651,15 +618,52 @@ def set_idrac_redfish_info(options):
     print(response.json())
     sys.exit()
 
-def download_file(options, url, file):
+def download_file(options):
   """Download file"""
-  if options['download'] is True:
-    if not os.path.exists(file):
-      string  = f"Downloading {url} to {file}"
-      command = f"wget {url} -O {file} -q"
-      handle_output(options,string)
-      with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, ) as process:
-        output = process.communicate()[0].decode()
+  url    = options['driverid']
+  link   = ""
+  keyid  = url.split("=")[1]
+  html_file = f"{options['workdir']}/{keyid}.html"
+  model_dir = f"{options['fwdir']}/{options['model']}"
+  if os.path.exists(html_file) and options['update'] is False:
+    with open(html_file, encoding="utf-8") as file:
+      html_doc = file.read()
+  else:
+    driver = start_web_driver()
+    driver.get(url)
+    time.sleep(5)
+    html_doc = driver.page_source
+    with open(html_file, "w", encoding="utf-8") as file:
+      html_doc = driver.page_source
+      file.write(html_doc)
+  html_doc = BeautifulSoup(html_doc, features='lxml')
+  for span in html_doc.select("span"):
+    line = str(span)
+    if re.search("driversDownload", line):
+      if re.search("aria-label", line):
+        found = False
+        link  = line.split("href=")[1]
+        link  = link.split('"')[1]
+        if options['ext']:
+          if re.search(options['ext'].lower(), link.lower()):
+            found = True
+        else:
+          found = True
+        if found is True: 
+          if options['list'] is True or options['verbose'] is True:
+            print(link)
+          if options['download'] is True:
+            if not os.path.exists(model_dir):
+              os.mkdir(model_dir)
+            file = os.path.basename(link)
+            file = f"{model_dir}/{file}"
+            if not os.path.exists(file):
+              if options['verbose'] is True:
+                string = f"Downloading {link} to {file}"
+                print(string)
+              command = f"wget {link} -O {file} -q"
+              with subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, ) as process:
+                process.communicate()[0].decode()
 
 def start_ssh_session(options):
   """Initiate SSH Session"""
@@ -719,6 +723,10 @@ def print_results(options, results):
         print()
         print(name)
         print(url)
+        if found is True:
+          if options['download'] is True or options['list'] is True:
+            options['driverid'] = url
+            download_file(options)
       else:
         found = False
         lc_name = name.lower()
@@ -729,25 +737,24 @@ def print_results(options, results):
           print()
           print(name)
           print(url)
-    if options['download'] is True and found is True:
-      if not os.path.exists(model_dir):
-        os.mkdir(model_dir)
-      file = os.path.basename(url)
-      file = f"{model_dir}/{file}"
-      download_file(options, url, file)
+          if found is True:
+            if options['download'] is True or options['list'] is True:
+              options['driverid'] = url
+              download_file(options)
   if options['json'] is True:
     print("}")
   else:
     print()
 
 if sys.argv[-1] == sys.argv[0]:
-  print_help(script_exe)
+  print_help(script['file'])
   sys.exit()
 
 # Get command line arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ip", required=False)               # Specify IP of iDRAC
+parser.add_argument("--ext", required=False)              # OS/Extension type
 parser.add_argument("--get", required=False)              # Get Parameter
 parser.add_argument("--set", required=False)              # Set Parameter
 parser.add_argument("--type", required=False)             # Type e.g. BIOS (defaults to listing all)
@@ -759,6 +766,7 @@ parser.add_argument("--output", required=False)           # Output type, e.g. Te
 parser.add_argument("--value", required=False)            # Used with set, to set a value, e.g. On for Power
 parser.add_argument("--method", required=False)           # Method to get iDRAC information (e.g. SSH or Redfish)
 parser.add_argument("--workdir", required=False)          # Work directory
+parser.add_argument("--driverid", required=False)         # Driver ID
 parser.add_argument("--platform", required=False)         # Platform e.g. PowerEdge, PowerVault, etc (defaults to PowerEdge)
 parser.add_argument("--username", required=False)         # Set Username
 parser.add_argument("--password", required=False)         # Set Password
@@ -766,6 +774,7 @@ parser.add_argument("--servicetag", required=False)       # Service Tag
 parser.add_argument("--all", action='store_true')         # Return all versions (by default only latest are returned)
 parser.add_argument("--ssh", action='store_true')         # Use SSH for iDRAC
 parser.add_argument("--json", action='store_true')        # Process/output data in JSON
+parser.add_argument("--list", action='store_true')        # Return full list of download URLs
 parser.add_argument("--mask", action='store_true')        # Mask MAC addresses etc
 parser.add_argument("--ping", action='store_true')        # Ping test host as part of getting iDRAC/Redfish data
 parser.add_argument("--text", action='store_true')        # Output in text
@@ -782,13 +791,11 @@ parser.add_argument("--nonheadless", action='store_true') # Non headless mode (u
 options = vars(parser.parse_args())
 
 if options['version']:
-  script_exe = sys.argv[0]
-  print_version(script_exe)
+  print_version(script['file'])
   sys.exit()
 
 if options['options']:
-  script_exe = sys.argv[0]
-  print_options(script_exe)
+  print_options(script['file'])
   sys.exit()
 
 if options['nonheadless']:
@@ -797,7 +804,7 @@ else:
   options['headless'] = True
 
 if not options['workdir']:
-  options['workdir'] = script_dir
+  options['workdir'] = script['work']
 
 if not options['username']:
   options['username'] = "root"
@@ -809,7 +816,7 @@ if not options['output']:
   options['output'] = "text"
 
 if not options['fwdir']:
-  options['fwdir'] = def_dir
+  options['fwdir'] = script['work']
 
 if not os.path.exists(options['fwdir']):
   os.mkdir(options['fwdir'])
@@ -879,6 +886,10 @@ if options['download'] is True:
     model_dir = options['fwdir']+"/"+options['model']
     if not os.path.exists(model_dir):
       os.mkdir(model_dir)
+
+if options['driverid']:
+  download_file(options)
+  sys.exit()
 
 if re.search(r"manual|pdf",options['type']):
   print()

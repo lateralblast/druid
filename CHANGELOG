@@ -76,3 +76,9 @@
 # Improved firmware processing with type
 # 0.3.9: Fri Jun 20 11:27:33 AM AEST 2025
 # Added code to determine details URL
+# 0.4.0: Sat Jun 21 02:00:43 PM AEST 2025
+# Updated code to generate details URL
+# 0.4.1: Sat Jun 21 02:02:12 PM AEST 2025
+# Added code to install chromedriver via pip
+# 0.4.2: Sat 21 Jun 2025 23:04:55 AEST
+# Updated download routine

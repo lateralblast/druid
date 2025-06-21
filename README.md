@@ -5,7 +5,7 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.3.9
+Version: 0.4.2
 
 A python script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
@@ -28,6 +28,9 @@ therefore I am depricating the Ruby script and moving to Python.
 
 Requirements
 ------------
+
+I've added code to install chromedriver automatically, but if there are issues on MacOS
+you can try installing it manually. 
 
 Required applications:
 
@@ -204,6 +207,28 @@ https://www.dell.com/learn/us/en/uscorp1/terms-of-sale-consumer-license-agreemen
 
 ```
 
+List all types of BIOS downloads:
+
+```
+./druid.py --model r630 --type BIOS --list
+
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.19.0
+https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid=km6p8
+https://dl.dell.com/FOLDER11275684M/1/BIOS_KM6P8_WN64_2.19.0.EXE
+https://dl.dell.com/FOLDER11275686M/1/BIOS_KM6P8_LN64_2.19.0.BIN.sign
+https://dl.dell.com/FOLDER11275494M/1/R730-021900C.efi
+https://dl.dell.com/FOLDER11294778M/1/R730_R730XD_R630_BIOS_2.19.0.pdf
+https://dl.dell.com/FOLDER11275682M/1/BIOS_KM6P8_LN64_2.19.0.BIN
+```
+
+List all types of BIOS downloads with efi extensions:
+
+```
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.19.0
+https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid=km6p8
+https://dl.dell.com/FOLDER11275494M/1/R730-021900C.efi
+```
+
 Search for EFI related firmware in all results:
 
 ```
@@ -227,23 +252,12 @@ https://downloads.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_power
 Download BIOS:
 
 ```
-$ ./druid.py --model m620 --type BIOS --download
+$ ./druid.py --model r630 --type BIOS --download --verbose
 
-Dell Server BIOS PowerEdge M620 Version 2.2.10 (A00)
-http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
-
-Downloading http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi to /Users/spindler/Code/firmware/m620/M620-020210C.efi
---2014-06-12 09:54:47--  http://downloads.dell.com/FOLDER02212732M/1/M620-020210C.efi
-Resolving downloads.dell.com... 23.205.116.120, 23.205.116.106
-Connecting to downloads.dell.com|23.205.116.120|:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 8477452 (8.1M) [text/plain]
-Saving to: '/Users/spindler/Code/firmware/m620/M620-020210C.efi'
-
-100%[===============================================================================================>] 8,477,452   8.35MB/s   in 1.0s
-
-2014-06-12 09:54:49 (8.35 MB/s) - '/Users/spindler/Code/druid/firmware/m620/M620-020210C.efi' saved [8477452/8477452]
-
+Dell Server PowerEdge BIOS R630/R730/R730XD Version 2.19.0
+https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid=km6p8
+https://dl.dell.com/FOLDER11275494M/1/R730-021900C.efi
+Downloading https://dl.dell.com/FOLDER11275494M/1/R730-021900C.efi to /home/user/druid/r630/R730-021900C.efi
 ```
 
 List latest availabe firmware/software for R610:
