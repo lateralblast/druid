@@ -81,14 +81,16 @@ Python:
 
 ```
 $ ./druid.py --help
-usage: druid.py [-h] [--ip IP] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK] [--search SEARCH]
-                [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR] [--platform PLATFORM] [--username USERNAME]
-                [--password PASSWORD] [--servicetag SERVICETAG] [--all] [--ssh] [--json] [--mask] [--ping] [--text] [--force] [--print]
-                [--tables] [--update] [--options] [--version] [--verbose] [--download] [--nonheadless]
+usage: druid.py [-h] [--ip IP] [--ext EXT] [--get GET] [--set SET] [--type TYPE] [--model MODEL] [--fwdir FWDIR] [--check CHECK]
+                [--search SEARCH] [--output OUTPUT] [--value VALUE] [--method METHOD] [--workdir WORKDIR] [--driverid DRIVERID]
+                [--platform PLATFORM] [--username USERNAME] [--password PASSWORD] [--servicetag SERVICETAG] [--all] [--ssh] [--json] [--list]
+                [--mask] [--ping] [--text] [--force] [--print] [--quiet] [--tables] [--update] [--options] [--version] [--verbose]
+                [--download] [--nonheadless]
 
 options:
   -h, --help            show this help message and exit
   --ip IP
+  --ext EXT
   --get GET
   --set SET
   --type TYPE
@@ -100,6 +102,7 @@ options:
   --value VALUE
   --method METHOD
   --workdir WORKDIR
+  --driverid DRIVERID
   --platform PLATFORM
   --username USERNAME
   --password PASSWORD
@@ -107,11 +110,13 @@ options:
   --all
   --ssh
   --json
+  --list
   --mask
   --ping
   --text
   --force
   --print
+  --quiet
   --tables
   --update
   --options
