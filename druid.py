@@ -16,7 +16,7 @@
 # pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.4.7
+# Version:      0.4.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -106,6 +106,18 @@ try:
 except ImportError:
   install_and_import("selenium")
   from selenium.webdriver.common.by import By
+
+try:
+  from selenium.webdriver.support.ui import WebDriverWait
+except ImportError:
+  install_and_import("selenium")
+  from selenium.webdriver.support.ui import WebDriverWait
+
+try:
+  from selenium.webdriver.support import expected_conditions as EC
+except ImportError:
+  install_and_import("selenium")
+  from selenium.webdriver.support import expected_conditions as EC
 
 try:
   from bs4 import BeautifulSoup
@@ -406,62 +418,90 @@ def get_servicetag_info(options, results):
         results[name] = info
   return results
 
+def handle_old_firmware_info(options, results):
+  return results
+
 def get_firmware_info(options, results):
   """Get Firmware info from website"""
   name   = ""
   link   = ""
   links  = []
-  driver = start_web_driver()
-  if re.search(r"[a-z]|[A-Z]", options['type']):
-    options['all'] = True
-  if options['all'] is True:
-    html_file = f"{options['workdir']}/{options['model']}_all.html"
-  else:
-    html_file = f"{options['workdir']}/{options['model']}_latest.html"
+  html_file = f"{options['workdir']}/{options['model']}_all.html"
   if os.path.exists(html_file) and options['update'] is False:
     with open(html_file, encoding="utf-8") as file:
       html_doc = file.read()
   else:
+    driver = start_web_driver()
     driver.get(options['modelurl'])
-    time.sleep(5)
+    WebDriverWait(driver, 5).until(
+      EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))).click()
     html_doc = driver.page_source
-    if options['all'] is True:
-      time.sleep(5)
-      driver.find_element(By.ID, "paginationRow").click()
     with open(html_file, "w", encoding="utf-8") as file:
       html_doc = driver.page_source
       file.write(html_doc)
-  html_doc = BeautifulSoup(html_doc, features='lxml')
-  for section in html_doc.select("section"):
-    for table in section.select("table"):
-      for row in table.select("tr"):
-        keyid = ""
-        if re.search(r"tableRow_", str(row)):
-          keyid = str(row)
-          keyid = keyid.split('tableRow_')[1]
-          keyid = keyid.split('"')[0]
-          keyid = keyid.lower()
-          link  = f"https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid={keyid}"
-          for column in row.select("td"):
-            if re.search(r"dl-desk-view", str(column)):
-              name = str(column)
-              name = name.split('dl-desk-view">')[1]
-              name = name.split('<span')[0]
-              name = re.sub(r"^\s+|\s+$", "", name)
-              name = re.sub(r"\.$", "", name)
+  if re.search(r"nav__icon dds__pl-3", (html_doc)):
+    html_doc = BeautifulSoup(html_doc, features='lxml')
+    for span in html_doc.select("span"):
+      string = str(span)
+      if re.search(r"dds__table__cell", string):
+        if not re.search(r">Action<", string):
+          if not re.search(r"dds__badge dds__badge--md dds__badge--light dds__badge--", string):
+            if re.search(r"0-PRODUCT-", string):
+              if re.search(r"[a-z,A-Z]", name):
+                name = re.sub(r"\s+", " ", name)
+                name = re.sub(r"&amp;", "and", name)
+                line = string
+                idno = line.split('0-PRODUCT-')[1]
+                idno = idno.split('"')[0]
+                link = "https://www.dell.com/support/home/en-au/drivers/driversdetails?driverid=%s" % (idno)
+                if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
+                  links.append(link)
+                  results[name] = link
+              name = ""
+              line = ""
             else:
-              if re.search(r"aria-label", str(column)):
+              line = string
+              line = line.split('">')[1]
+              line = line.split('</span')[0]
+              line = re.sub(r"^\s+|\s+$", "", line)
+              line = re.sub(r"\.$", "", line)
+              if name == "":
+                name = line
+              else:
+                name = "%s %s" % (name, line)
+  else:
+    html_doc = BeautifulSoup(html_doc, features='lxml')
+    for section in html_doc.select("section"):
+      for table in section.select("table"):
+        for row in table.select("tr"):
+          keyid = ""
+          if re.search(r"tableRow_", str(row)):
+            keyid = str(row)
+            keyid = keyid.split('tableRow_')[1]
+            keyid = keyid.split('"')[0]
+            keyid = keyid.lower()
+            link  = f"https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid={keyid}"
+            for column in row.select("td"):
+              if re.search(r"dl-desk-view", str(column)):
                 name = str(column)
-                name = name.split('aria-label="')[1]
-                name = name.split('" class=')[0]
-                name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
+                name = name.split('dl-desk-view">')[1]
+                name = name.split('<span')[0]
+                name = re.sub(r"^\s+|\s+$", "", name)
                 name = re.sub(r"\.$", "", name)
-        if re.search(r"[a-z,A-Z]", name):
-          name = re.sub(r"\s+", " ", name)
-          if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
-            if link not in links:
-              links.append(link)
-              results[name] = link
+              else:
+                if re.search(r"aria-label", str(column)):
+                  name = str(column)
+                  name = name.split('aria-label="')[1]
+                  name = name.split('" class=')[0]
+                  name = re.sub(r"^\s+|\s+$|Expand to view details of ", "", name)
+                  name = re.sub(r"\.$", "", name)
+          if re.search(r"[a-z,A-Z]", name):
+            name = re.sub(r"\s+", " ", name)
+            name = re.sub(r"&amp;", "and", name)
+            if re.search(r"list|all",options['type']) or name.lower().count(options['type'].lower()) > 0:
+              if link not in links:
+                links.append(link)
+                results[name] = link
   return results
 
 def check_idrac_redfish(options, base_url):

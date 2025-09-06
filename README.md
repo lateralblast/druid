@@ -5,7 +5,7 @@ DRUID
 
 Dell Retrieve Update Information and Download
 
-Version: 0.4.7
+Version: 0.4.9
 
 A python script to parse Dell firmware page for a particular PowerEdge model to get the available firmware.
 It can also automate the download of the firmware.
@@ -28,6 +28,10 @@ Fund me here: https://ko-fi.com/richardatlateralblast
 
 Notice
 ------
+
+Since the recent website update the servicetag feature is no longer working.
+This requires further investigation as it requires clicking on a hidden element
+with a javascript(void) function, and none of the usual methods work.
 
 I'm adding redfish support to the script to get information from the iDRAC.
 The Ruby redfish client module does not have all the features I need,

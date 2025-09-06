@@ -92,3 +92,7 @@
 # Added quiet switch
 # 0.4.7: Sun 22 Jun 2025 09:03:43 AEST
 # Tweaks and documentation updates
+# 0.4.8: Sat  6 Sep 2025 11:27:07 AEST
+# Added handler for cookies pop-up
+# 0.4.9: Sat  6 Sep 2025 16:38:55 AEST
+# Updated script for new web site format
