@@ -16,7 +16,7 @@
 # pylint: disable=W0718
 
 # Name:         druid (Dell Retrieve Update Information and Download)
-# Version:      0.4.9
+# Version:      0.5.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -45,6 +45,7 @@ import os
 import re
 
 from os.path import expanduser
+from io import BytesIO
 
 # Set some defaults
 
@@ -88,6 +89,12 @@ except ImportError:
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+try:
+  import pycurl
+except ImportError:
+  install_and_import("pycurl")
+  import pycurl 
 
 try:
   from selenium import webdriver
@@ -382,18 +389,63 @@ def get_servicetag_info(options, results):
   csv_file  = f"{options['fwdir']}/{options['servicetag']}.csv"
   if options['get'] == "config":
     if not os.path.exists(csv_file) or options['update'] is True:
-      driver.get(options['servicetagurl'])
-      time.sleep(30)
-      html_doc = driver.page_source
-      with open(html_file, "w", encoding="utf-8") as file:
-        file.write(html_doc)
-      html_doc = BeautifulSoup(html_doc, features='lxml')
-      driver.find_element(By.ID, "quicklink-sysconfig").click()
-      time.sleep(5)
-      html_doc  = driver.page_source
-      with open(conf_file, "w", encoding="utf-8") as file:
-        file.write(html_doc)
-      driver.find_element(By.ID, "current-config-export").click()
+      response_data = []
+      def write_callback(data):
+        response_data.append(data)
+        return len(data)
+      c = pycurl.Curl()
+      try:
+        c.setopt(c.URL, "https://www.dell.com/support/product-details/en-au/reviewspecs/export/8G5Q6Z2")
+        c.setopt(c.POST, 1)
+        c.setopt(c.POSTFIELDS, "")
+        headers = [
+          "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0",
+          "Accept: */*",
+          "Accept-Language: en-US,en;q=0.5",
+          "Accept-Encoding: gzip, deflate, br, zstd",
+          "Referer: https://www.dell.com/support/product-details/en-au/servicetag/0-RHB1WndvOGZoSnZPVFBMK2ttVGxKUT090/overview",
+          "X-Requested-With: XMLHttpRequest",
+          "X-Robots-Tag: noindex",
+          "Origin: https://www.dell.com",
+          "Connection: keep-alive",
+          "Cookie: akGD=%7B%22country%22%3A%22AU%22%2C%22region%22%3A%22VIC%22%7D; bm_ss=ab8e18ef4e; _abck=8772D1AD71F05E4A31958D0B93FA7891~-1~YAAQIe5UuAWZ0fWYAQAARiHfIQ4wuxhLhVDIvMgAu3eGYaBec6j2oP4Zb+p+EmDsma9noeyGEkXVohFfLTkYiRWzhM1n+2WzqscqVZeFQbDDyq/vy66ni79OhoFjjLx0q/Jora0/BBRdRHE+Sii7kKV9kSRZU87nXDXGUGZu+UzTThy2Qoi+RBASaOxEugnIn2FUth1EFcBIPtNQgjqynuA57gyRU08S7kDj2PoWH1w+TC2ltNfvSCor/U1wNx89woJPKEdyeplyo1mD4Xfwx2G28kVs6uqYIFm9wZCNOeccWJWRBeZoYTehZr6n92jow5ZtPBL59+vNrZxp8IDoYdSpNV4cqSsRjOvWIGH1yOJoCnvX3ZGgPAAFxIS4HUXo86Hl3vZkBW/yNlFM7UZRGLdttQvI+6G4ioANRTq+kSRoWbTNVoOKza8GMPt3MmXfTENhou5qBJ2diWU2q4dOmgAykQFHGVp5iEvO9527L39JW/QR71p+y8JTzogwbT1UatBQl7XDjxJlmVumEhv0Aq/A861BlvWp+KZr/ERJe4nUyHvxWMFnnp2SeHIDE/B4I5NNhQ/fd+j78NKX2NmifyX56ZDaJw8hVhqG514rCDmnBC9BaIbQ4mGcjMoM0m8VQ1U1RUuCAKFbnxb+oxZJn6NmnGzGfenK4DjLJ4wN3HM4YHcWTorl8OTENtwd97zZgpAbmOW9RaWSOMCKc2tZBbnpYADrWZBW+xmo/0Me8dR6k9kqfdQBSceC4CIjUsENAYZPdbVSAchmxftK2o/AT5ImulvV0C8bFCzKfq1FSp90kjgmDVgrRSh3+nDfCWPtdrHXvm5bGpRvA1uByzpe5SAr5h5ocXnY3RR9Y8/vGXlBcy/d771N/4KSjBJeYrAOYws6h9p6iYzTIEwHS6x4GWB0~0~-1~-1~~; bm_s=YAAQIe5UuAaZ0fWYAQAARiHfIQTobTwVIwjwenAavP67jMAexwTOlNR8CY2uiNYQ0kb6ZHAsk3KLA5fee2zZ96QLU/CKX7dqI65srDy/t7kvbRi9O71ykaLo8ccPqO1AYb2ZHjixGpWslkXnZpNxhufLpBl41fAmf7vfrrJg7J8z0RU3DVxz1+BJkpb/mab22/AH7Zqj0bEfgXqneA0hRe5KRU95f/5NvFy8FmxBX5mzdKH6vMVxak9SwGAHvjc5ZVwX9FeA0z5kVB7+h02FXMdaV5UQNaQ/LatwYu0PwBOcZrX3bDm3wckjuQZNMjV8mDAmOfWsbeQyNs8HN3KP3BN0Rg8jCQIGeKPxzdxTjwSTISo1PTVDDqvaTIxLuHbtoV8BzGkw7z0rfVqAJyBiBiIA0JIjPkFtl3J//eYFtxrqpUKOsvs67MX0pxiBs7DhvYPVWxr037GV6JDWsclbg+GW9I2xXDHQOq2yNY1YBTfo0+RwRpnoPqRbpuZ8hibkaVIwB9FDpFshjDdeZdr8734qywUEpT7rENB3z+Kn7bh/QHgSmCUcsJpGqi7eaCTEmd3kjza7Sr8=; bm_sz=B7BA06D5BD24BFA3D98B898CF85D2B48~YAAQIe5UuAeZ0fWYAQAARiHfIR1Dfm5/Bkh0BzAfpaNE9j7j1PMB2kvl3CudUdVET/O/x+CB+0sMyJLcvgZqzIgbasvFAtq+o9ACDACdaH2t7Hlw29sZC4G/HAXbcb0Mort7bGK3x5iogDRrBrUCqjQPLPVbPdjmLL+k+YSVIWfR1GG+VSokpH2BfjXqAqD+GO9A1rxFkuJiiGG0xb9TjHndPZ7RFi/xa3LFXN8RqMydCSd5bE10sfSapiNsQ/83fF0//7F8907fDD7/ergwyrAZ9yYO65TARa+n9dWKVVRy+2nH1OI//MZMaKMABKkEvVeaxuyiS5LfaaT69tQ+dHI1/T+UNSMuIx1qadwHq97aKTcOFJKfcD2qrHB8vkROVZX4CyaEhDNVHjIQtjEiNsO/9VvTAc5BEX9zrKyVDc62LRfHnfs+CANP7nnM18XG+6iliOfdlcDJf4iEE2kFFDliwEtMLeELYLQ+H0diNmzk4tSPDCtUbSkexYqzxgjWU/VjC+yElBg51/Zq1TkYRUB5/J3BKci3ypkecSv2U+ZAep4YXYM4ng==~3552323~3748659; eSupId=SID=ee30d2cb-41b8-4f2c-82ee-7575c302e694&apc=optiplex-7070-desktop; lwp=c=au&l=en&s=bsd&cs=aubsd1; OLRProduct=OLRProduct=8G5Q6Z2|; ak_bmsc=17323E9FC29F0BAF20B8E56EB7C12BCD~000000000000000000000000000000~YAAQIe5UuAyyzvWYAQAAsEGwIR3iS21xO1qdCJWmZYWqaY8c8DUpmRh5fjNY4RFgLha8E5V2Arb9tItUwxB7lDSTMQwxeWi5YohVXDQSyiOfYZjZHzSf3CK8PPj42ruaf92Jp36UP0M3QA+F6q9MWddy863WkDlYi/63IM6YT64inxv18KXYjL9nyEcsWmjKTfPYIY9ixdGjUEkjjMQtO35C4C0tAaC1YoXbB3kphshwwY9/MX29WpCCxGgTVgAp85fGaWoaEJesgyrBGMEOat5T1YzPBmyDRgKc+s5iTjOCSvdAsWbbujKsbpuGxlkT7JdMOpOWN5D4XBHyjmrdW0czciG3wtiwOG9g+rpPWdKiwLIxmm2Kg4BkfGKB7B7RCrs+9iM8cxwAMDhcVnbi6yh40asPOmbqtNAGxEAj9dHRys7IDjQwRH+4JjhCV8yod4q7YVtI2d8VRwBL90kZU6D13+RG68mt+1meBwCwnz+SQT5Jp6W6o5fGsxVSoQcuaCOshPa6tB0gpV57jA==; bm_so=F30A2B636B11FFA88B2375C1FD1B595DA4E4D38956DCF3B12CE3EE353A8DA8DD~YAAQHe5UuCmsKuyYAQAAKwbfIQQqgSYKWVfuq2e/MJrBYoePirNRaGdIOHV8/rWjbsnRpL/GreEfG0y9QteGuYURpmqd67lzSrEqfbwxVHVHIJ2LkU3CucQ31VhYgMA9Ss6R/KfdYmRVto5jRRP1LNWxaHZHqkaVAQICPRJ1HxyFDt0+RU5IraxlehJt/YVUjffPJFK9eqj7rSxlhb6E4JWUT6Sd+BeCqJvJJEtwDAyrQO4FVCO4atS/stndwgpWEKUNW5SiA0GUqcHogFNfWypWm3FTdZxxvswNZyQXkoktHJqTH21kSRJ6uTvUlGK2QU6Si5fRQGkS44RtjIYd0FR+YWxCF8bt5XHDR/TMul9/HWEppzPpg3YN1bYax3jjcSc/uJF05YSHcUxtcpUqllgE+bAGuAPyVBBb4yo0v21jAk+tjdvSY7Zihdypu2pIOi4+hwS7UZqqJX1Eqg==; bm_lso=F30A2B636B11FFA88B2375C1FD1B595DA4E4D38956DCF3B12CE3EE353A8DA8DD~YAAQHe5UuCmsKuyYAQAAKwbfIQQqgSYKWVfuq2e/MJrBYoePirNRaGdIOHV8/rWjbsnRpL/GreEfG0y9QteGuYURpmqd67lzSrEqfbwxVHVHIJ2LkU3CucQ31VhYgMA9Ss6R/KfdYmRVto5jRRP1LNWxaHZHqkaVAQICPRJ1HxyFDt0+RU5IraxlehJt/YVUjffPJFK9eqj7rSxlhb6E4JWUT6Sd+BeCqJvJJEtwDAyrQO4FVCO4atS/stndwgpWEKUNW5SiA0GUqcHogFNfWypWm3FTdZxxvswNZyQXkoktHJqTH21kSRJ6uTvUlGK2QU6Si5fRQGkS44RtjIYd0FR+YWxCF8bt5XHDR/TMul9/HWEppzPpg3YN1bYax3jjcSc/uJF05YSHcUxtcpUqllgE+bAGuAPyVBBb4yo0v21jAk+tjdvSY7Zihdypu2pIOi4+hwS7UZqqJX1Eqg==1757209888817; AMCV_4DD80861515CAB990A490D45%40AdobeOrg=179643557%7CMCIDTS%7C20339%7CMCMID%7C13316711671072964334141885059090447352%7CMCAID%7CNONE%7CvVersion%7C5.5.0; s_vnc365=1788745888434%26vn%3D2; bm_mi=C92A52003222658E28CBDE4058754629~YAAQIe5UuCqqzvWYAQAAXtCvIR0aIpD39vRltc1f8xh+cN624eQx0QtO4hDuo7TWAG1OD4bZIfzAobbR5DPc0/7IwF9zUgvDTRzTyv9tr7OyytzQxwvAWOM3Ff70PqeJ1WEzE0TY48FdlQTmPD8wiBselUUVXOYw/eD/CHcN/wjrEEWbRW61EHYLHry55NnJB1cbi7Q72khKb9XOeR9CDFMjvrVmA1GRvQHjd+xQsrZr+Q5Tqjeg3xZf1YarYfhc0LbEWFyzgJgS3daCx/6ObR1JCUOPXtKbsqKf24buStTOA/0DG/xD7wCYUwH5keQAIyhRswq3yLRmNe0Ckji9uBrKLsmQJ/UFNoAFIGrrr7rqvFa20asB+VsojXsWwqUXnosWOYTGhzMEGHnt2frPfrLyigHKbhzZZ658ATt5QC2M~1; bm_sv=937C455442C97A77CEC40A71F157A276~YAAQIe5UuP2rzvWYAQAAK+mvIR1a9jFiHIZZ+/mBUDq+HqzluIlasH538RACAaI3JUEMGGQwm0MGTTQwRnQBqf/raxo3EEOQVblCqi/0Q3ia1BfoTl1kxlxWJqlVuTJjpkwN6KKGzRL4KmOT0qbMRj0KPncRQzqUWDQMbADhuJTY1gOA5dButrRD/BeFtLfpOGUXXnzE/rVnvbWlDf+f4p4GPx8uBOZN7lvlxQQ21RUPyW9upsIXrZ+GZQBpta4=~1; txUid=Co+qL2i82Olb26uABda5Ag==; VOCAAS_STICKY_SESSION=C957E01CA33C4C716EDE2999C48EB332; AWSALB=myzYLq2dvc0UYjGMC+uVXwY89FGjExg07qWiQzcGBmZzWW7q1RIHXulvvUeKzQ2jEZjN/LkJrvrHF/ufSVMI5qxJ2oiS/4BN/pKB4CQtCDeTIuLqMBtu/rr7TaN4; AWSALBCORS=myzYLq2dvc0UYjGMC+uVXwY89FGjExg07qWiQzcGBmZzWW7q1RIHXulvvUeKzQ2jEZjN/LkJrvrHF/ufSVMI5qxJ2oiS/4BN/pKB4CQtCDeTIuLqMBtu/rr7TaN4; spr_device_id=170b2410-8b86-11f0-b45a-075afb61551f; spr-analytics=true; lang=en; connect.sid=s%3Awww-1tq2bTjXx4MsPQj6t7iL7X1fO3E0dfIo.ZHcpsMdrtns4Ji0K59ztcDIxhKxQcpsYSPqeAsT9aH4; sess-exp-time=Sun, 7 Sep 2025 01:30:50 GMT; DellCEMSession=82A44853A74F6896D9B7C07A26A92082; TS013d7cf0=01f7eb84748b90c4a30eb05df157f5b6e5d4b55c11bd888ad6fd6357625c2ddf7a375fc216eea4ddc1364af77e0272a98a58307db2; TS017b1cb5=01765abcd1299a2210722598d55d89070679cf24758924176eb30fb4dfbe06b6d0ce2e2558e221261b9904910fd24214f542acedf3; um_g_uc=false; akavpau_maintenance_vp=1757210195~id=34b37b184b0f99da099c3c5acce8bd45; s_c49=c%3Dau%26l%3Den%26s%3Dbsd%26cs%3Daubsd1%26servicetag%3D8g5q6z2%26systemid%3Doptiplex-7070-desktop; gpv_pn=au%7Cen%7Caubsd1%7Cbsd%7Cesupport-productsupport-dep%7Cservicetag; s_ips=378; s_tp=3477; s_ppv=au%257Cen%257Caubsd1%257Cbsd%257Cesupport-productsupport-dep%257Cservicetag%2C11%2C11%2C11%2C378%2C9%2C1; cidlid=%3A%3A; s_ivc=true; s_cc=true; dc-ctxt=c=AU&l=en&sdn=work&uh=44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a&ut=1757209888702; s_sq=dellglobalonlinemaster%3D%2526c.%2526a.%2526activitymap.%2526page%253Dau%25257Cen%25257Caubsd1%25257Cbsd%25257Cesupport-productsupport-dep%25257Cservicetag%2526link%253DProduct%252520Specifications%2526region%253Daccordion-item-content-249556425%2526pageIDType%253D1%2526.activitymap%2526.a%2526.c%2526pid%253Dau%25257Cen%25257Caubsd1%25257Cbsd%25257Cesupport-productsupport-dep%25257Cservicetag%2526pidt%253D1%2526oid%253Djavascript%25253Avoid%2525280%252529%2526ot%253DA",
+          "Sec-Fetch-Dest: empty",
+          "Sec-Fetch-Mode: cors",
+          "Sec-Fetch-Site: same-origin",
+          "Priority: u=0",
+          "Content-Length: 0"
+        ]
+        c.setopt(c.HTTPHEADER, headers)
+        c.setopt(c.WRITEFUNCTION, write_callback)
+        c.setopt(c.ENCODING, "")
+        c.setopt(c.FOLLOWLOCATION, 1)
+        c.setopt(c.TIMEOUT, 30)
+        c.perform()
+        if response_data:
+          full_response = b''.join(response_data)
+          try:
+            decoded_response = full_response.decode('utf-8')
+          except UnicodeDecodeError:
+            try:
+              decoded_response = full_response.decode('latin-1')
+            except:
+              decoded_response = full_response.decode('utf-8', errors='replace')
+          with open(csv_file, 'w', encoding='utf-8') as f:
+            f.write(decoded_response)
+        else:
+          print("No response data received!")
+          return None
+      except pycurl.error as e:
+        print(f"cURL error: {e}")
+        return None
+      finally:
+        c.close()
+      if not os.path.exists(html_file) and options['update'] is False:
+        driver.get(options['servicetagurl'])
+        time.sleep(2)
+        html_doc = driver.page_source
+        with open(html_file, "w", encoding="utf-8") as file:
+          file.write(html_doc)
       if os.path.exists(csv_file):
         process_servicetag_csv(options)
     else:
@@ -404,7 +456,7 @@ def get_servicetag_info(options, results):
         html_doc = file.read()
     else:
       driver.get(options['servicetagurl'])
-      time.sleep(30)
+      time.sleep(5)
       html_doc = driver.page_source
       with open(html_file, "w", encoding="utf-8") as file:
         file.write(html_doc)
@@ -813,6 +865,7 @@ parser.add_argument("--type", required=False)             # Type e.g. BIOS (defa
 parser.add_argument("--model", required=False)            # Model e.g. M610, R720, etc
 parser.add_argument("--fwdir", required=False)            # Set a directory to download to
 parser.add_argument("--check", required=False)            # Check installed against available (e.g. inventory)
+parser.add_argument("--cookie", required=False)           # Cookie file
 parser.add_argument("--search", required=False)           # Search for a term
 parser.add_argument("--output", required=False)           # Output type, e.g. Text, HTML (defaults to Text)
 parser.add_argument("--value", required=False)            # Used with set, to set a value, e.g. On for Power
@@ -858,6 +911,9 @@ else:
 
 if not options['workdir']:
   options['workdir'] = script['work']
+
+if not options['cookie']:
+  options['cookie'] = f"{options['workdir']}/cookie"
 
 if not options['username']:
   options['username'] = "root"
@@ -970,7 +1026,9 @@ if options['servicetag']:
     service_tags.append(options['servicetag'])
   for service_tag in service_tags:
     options['servicetag'] = service_tag
-    options['servicetagurl'] = f"https://www.dell.com/support/home/en-au/product-support/servicetag/{options['servicetag']}/overview#"
+    options['servicetopurl'] = f"https://www.dell.com/support/home/en-au/product-support/servicetag/{options['servicetag']}/overview#"
+    options['servicetagurl'] = f"https://www.dell.com/support/product-details/en-au/ReviewSpecs/GetOriginalConfiguration?serviceTag={options['servicetag']}&showOriginalConfig=true&showCurrentConfig=true"
+    options['servicecsvurl'] = f"https://www.dell.com/support/product-details/en-au/reviewspecs/export/${options['servicetag']}"
     if options['verbose'] is True:
       string = f"URL: {options['servicetagurl']}"
       if options['quiet'] is False:
