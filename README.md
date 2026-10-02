@@ -1,3 +1,5 @@
+**DEPRECATED: This script has been deprecated. Please use the new dwelf script instead: https://github.com/lateralblast/dwelf**
+
 ![alt tag](https://raw.githubusercontent.com/lateralblast/druid/master/druid.jpg)
 
 DRUID
@@ -22,7 +24,9 @@ https://www.dell.com/support/home/en-au/product-support/product/poweredge-r610/d
 License
 -------
 
-CC BY-SA: https://creativecommons.org/licenses/by-sa/4.0/
+CC BY-NC-SA: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+See the [LICENSE](LICENSE) file.
 
 Fund me here: https://ko-fi.com/richardatlateralblast
 
@@ -81,13 +85,6 @@ Required additional Python modules:
 - bs4
 
 If not installed, the script will attempt to install the required modules.
-
-License
--------
-
-This software is licensed as CC-BA (Creative Commons By Attrbution)
-
-http://creativecommons.org/licenses/by/4.0/legalcode
 
 Usage
 -----

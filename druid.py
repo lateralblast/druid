@@ -18,8 +18,8 @@
 # Name:         druid (Dell Retrieve Update Information and Download)
 # Version:      0.5.0
 # Release:      1
-# License:      CC-BA (Creative Commons By Attrbution)
-#               http://creativecommons.org/licenses/by/4.0/legalcode
+# License:      CC BY-NC-SA (Creative Commons Attribution-NonCommercial-ShareAlike)
+#               https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 # Group:        System
 # Source:       N/A
 # URL:          http://lateralblast.com.au/
@@ -395,7 +395,7 @@ def get_servicetag_info(options, results):
         return len(data)
       c = pycurl.Curl()
       try:
-        c.setopt(c.URL, "https://www.dell.com/support/product-details/en-au/reviewspecs/export/8G5Q6Z2")
+        c.setopt(c.URL, f"https://www.dell.com/support/product-details/en-au/reviewspecs/export/{option['servicetag']}")
         c.setopt(c.POST, 1)
         c.setopt(c.POSTFIELDS, "")
         headers = [

@@ -1,0 +1,13 @@
+requests
+urllib3
+pycurl
+selenium
+webdriver-manager
+beautifulsoup4
+lxml
+wget
+paramiko
+pexpect
+redfish
+terminaltables
+pygments
